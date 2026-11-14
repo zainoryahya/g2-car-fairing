@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>G2 Car Body — Class-A Surface Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#e8e9ea; --ink:#16181b; --mute:#5d636b; --line:#d3d6da; --panel:rgba(250,250,249,.94);
+    --accent:#b4231c; --ok:#1f7a4d; --bad:#b4231c; --chip:#eef0f2;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;overflow:hidden}
+  #c{position:fixed;inset:0;display:block;width:100%;height:100%;touch-action:none}
+  .hud{position:fixed;left:12px;top:12px;right:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;pointer-events:none}
+  .title{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 11px;pointer-events:auto;max-width:62%}
+  .title h1{margin:0;font-size:14px;font-weight:600;letter-spacing:.01em}
+  .title p{margin:2px 0 0;font-size:11px;color:var(--mute);font-family:"IBM Plex Mono",monospace}
+  .badge{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.45;pointer-events:auto;text-align:right}
+  .badge b{font-weight:500}
+  .ok{color:var(--ok)} .bad{color:var(--bad)}
+  .legend{position:fixed;right:12px;top:96px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-family:"IBM Plex Mono",monospace;font-size:10px;display:none;width:150px}
+  .legend .bar{height:10px;border-radius:3px;margin:5px 0 3px}
+  .legend .ends{display:flex;justify-content:space-between;color:var(--mute)}
+  .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);border-radius:16px 16px 0 0;padding:8px 12px calc(10px + env(safe-area-inset-bottom));max-height:52vh;overflow-y:auto;backdrop-filter:blur(8px)}
+  @media (min-width:900px){ .sheet{left:auto;right:12px;bottom:12px;width:360px;border-radius:14px;border:1px solid var(--line);max-height:calc(100vh - 120px)} .legend{top:auto;bottom:24px;right:384px} }
+  .grab{width:38px;height:4px;border-radius:2px;background:#c5c9ce;margin:0 auto 8px;cursor:pointer}
+  .row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+  .lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:6px 0 5px;font-weight:500}
+  button.chip{border:1px solid var(--line);background:var(--chip);color:var(--ink);font:500 12px "IBM Plex Sans",sans-serif;padding:7px 10px;border-radius:999px;cursor:pointer}
+  button.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .sw{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+  .sw.on{box-shadow:0 0 0 2px var(--ink)}
+  .sl{display:grid;grid-template-columns:96px 1fr 46px;align-items:center;gap:8px;font-size:12px;margin:4px 0}
+  .sl span:last-child{font-family:"IBM Plex Mono",monospace;font-size:11px;text-align:right;color:var(--mute)}
+  input[type=range]{width:100%;accent-color:var(--ink)}
+  .spec{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--mute)}
+  .spec b{color:var(--ink);font-weight:500}
+  .note{font-size:11.5px;color:var(--mute);line-height:1.45;margin:6px 0 2px}
+  .toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:12px;padding:7px 12px;border-radius:8px;opacity:0;transition:opacity .25s;pointer-events:none}
+  .collapsed .more{display:none}
+  #conv{width:100%;height:96px;background:#fff;border:1px solid var(--line);border-radius:8px;display:block;margin:4px 0}
+  .fres{font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.5;color:var(--mute)}
+  .fres b{color:var(--ink);font-weight:500}
+  button.chip.run{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.chip:disabled{opacity:.4}
+  @media (max-width:600px){ .badge{white-space:nowrap;font-size:9.5px;padding:6px 8px} .title{max-width:52%} .title p{font-size:10px} .legend{top:auto;bottom:calc(var(--sheetH,200px) + 10px)} }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud">
+  <div class="title"><h1>G2 Car Body · Class-A skin</h1><p id="sub">bicubic B-spline · clamped</p></div>
+  <div class="badge" id="badge"></div>
+</div>
+<div class="legend" id="legend"><div id="legT">Mean curvature H</div><div class="bar" id="legBar"></div><div class="ends"><span id="legL"></span><span>0</span><span id="legR"></span></div></div>
+<div class="toast" id="toast"></div>
+
+<div class="sheet" id="sheet">
+  <div class="grab" id="grab" title="Show / hide controls"></div>
+  <div class="lbl">Surface interrogation</div>
+  <div class="row" id="modes">
+    <button class="chip on" data-m="0">Paint</button>
+    <button class="chip" data-m="1">Zebra</button>
+    <button class="chip" data-m="2">Isophote</button>
+    <button class="chip" data-m="3">Gauss K</button>
+    <button class="chip" data-m="4">Mean H</button>
+    <button class="chip" data-m="5">Deviation</button>
+  </div>
+  <div class="row">
+    <button class="chip" id="tNet">Control net</button>
+    <button class="chip" id="tKnot">Patch boundaries</button>
+    <button class="chip" id="tComb">Curvature combs</button>
+  </div>
+  <div class="row" id="views">
+    <button class="chip" data-v="q">3/4</button><button class="chip" data-v="s">Side</button><button class="chip" data-v="f">Front</button><button class="chip" data-v="r">Rear</button><button class="chip" data-v="t">Top</button>
+  </div>
+  <div class="more">
+    <div class="lbl">Fairing optimisation</div>
+    <div class="row" id="fobj"><button class="chip on" data-k="var">Curvature variation ∫|∇H|²dA</button><button class="chip" data-k="bend">Bending ∫(κ₁²+κ₂²)dA</button></div>
+    <div class="row" id="fmeth">
+      <button class="chip" data-f="tp">Thin-plate (linear)</button><button class="chip on" data-f="jde">jDE</button><button class="chip" data-f="pso">PSO</button><button class="chip" data-f="gwo">GWO</button><button class="chip" data-f="hyb">Thin-plate → jDE</button>
+    </div>
+    <div class="row" id="fspace"><button class="chip on" data-s="reduced">Smooth design space (36)</button><button class="chip" data-s="full">Full net (156)</button></div>
+    <div class="sl"><label>Max deviation δ</label><input type="range" id="delta" min="2" max="30" step="1" value="10"><span id="deltav"></span></div>
+    <div class="sl"><label>Budget (evals)</label><input type="range" id="budget" min="2000" max="30000" step="1000" value="9000"><span id="budgetv"></span></div>
+    <div class="row"><button class="chip run" id="fRun">Run fairing</button><button class="chip" id="fStop" disabled>Stop</button><button class="chip" id="fCmp" disabled>Show original</button><button class="chip" id="fReset" disabled>Reset</button></div>
+    <canvas id="conv"></canvas>
+    <div class="fres" id="fres">Free variables: one normal offset per control point (left/right mirrored). Hard points fixed: 3 end rows each side (bumpers) + rocker/wheel-arch edge.</div>
+    <div class="lbl">Continuity (degree p, uniform clamped knots)</div>
+    <div class="row" id="degs">
+      <button class="chip" data-p="2">p=2 · C¹ (G1)</button>
+      <button class="chip on" data-p="3">p=3 · C² (G2)</button>
+      <button class="chip" data-p="4">p=4 · C³</button>
+      <button class="chip" data-p="5">p=5 · C⁴</button>
+    </div>
+    <div class="lbl">Package &amp; proportion</div>
+    <div class="sl"><label>Length</label><input type="range" id="L" min="4.20" max="5.00" step="0.01" value="4.60"><span id="Lv"></span></div>
+    <div class="sl"><label>Width</label><input type="range" id="W" min="1.74" max="1.96" step="0.01" value="1.82"><span id="Wv"></span></div>
+    <div class="sl"><label>Roof height</label><input type="range" id="H" min="1.30" max="1.62" step="0.01" value="1.44"><span id="Hv"></span></div>
+    <div class="sl"><label>Windshield rake</label><input type="range" id="rake" min="-0.20" max="0.25" step="0.01" value="0"><span id="rakev"></span></div>
+    <div class="sl"><label>Notch → fastback</label><input type="range" id="rear" min="0" max="1" step="0.01" value="0"><span id="rearv"></span></div>
+    <div class="sl"><label>Fender flare</label><input type="range" id="flare" min="0" max="0.07" step="0.005" value="0.025"><span id="flarev"></span></div>
+    <div class="sl"><label>Stations (rows)</label><input type="range" id="N" min="14" max="44" step="1" value="28"><span id="Nv"></span></div>
+    <div class="sl"><label>Comb section u</label><input type="range" id="secU" min="0.05" max="0.95" step="0.01" value="0.52"><span id="secUv"></span></div>
+    <div class="lbl">Paint</div>
+    <div class="row" id="paints">
+      <button class="sw on" data-c="#9e1b17" style="background:#9e1b17"></button>
+      <button class="sw" data-c="#c9ccd0" style="background:#c9ccd0"></button>
+      <button class="sw" data-c="#1d2f4f" style="background:#1d2f4f"></button>
+      <button class="sw" data-c="#f2f1ed" style="background:#f2f1ed"></button>
+      <button class="sw" data-c="#24272b" style="background:#24272b"></button>
+    </div>
+    <div class="lbl">Spec sheet</div>
+    <div class="spec" id="spec"></div>
+    <p class="note">Fairing only moves control points, so the skin stays a degree-p B-spline: continuity class is unchanged, only the quality (waviness) improves. One tensor-product B-spline skin. With p=3 every interior knot line is C², so position, tangent plane and curvature all match across patch boundaries (G2). Switch to p=2 and watch the Mean H bands and comb envelopes break at the patch boundaries. Glass, lamps and grille are paint regions on the same skin.</p>
+    <div class="row" style="margin-top:8px"><button class="chip" id="copy">Copy control net + knots (JSON)</button></div>
+  </div>
+</div>
+
+<script type="text/plain" id="wsrc">// ===== B-spline car body geometry (pure math, no three.js) =====
+const BASE = {
+  L: 4.60, W: 1.82, axF: 0.95, axR: 3.70, wheelR: 0.33,
+  kx: [0.05, 0.40, 0.95, 1.45, 1.75, 2.10, 2.55, 3.00, 3.40, 3.80, 4.20, 4.55],
+  s:  [0.66, 0.76, 0.84, 0.88, 0.90, 0.91, 0.92, 0.93, 0.94, 0.95, 0.95, 0.91],
+  h:  [0.70, 0.80, 0.87, 0.92, 1.08, 1.35, 1.44, 1.42, 1.27, 1.03, 0.99, 0.94],
+  t:  [0.74, 0.78, 0.78, 0.76, 0.70, 0.64, 0.62, 0.62, 0.66, 0.76, 0.78, 0.76],
+  w:  [0.86, 0.89, 0.91, 0.90, 0.90, 0.90, 0.90, 0.90, 0.91, 0.91, 0.89, 0.85],
+  c:  [0.01, 0.02, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.02, 0.02, 0.01],
+  fastH: [1.36, 1.20, 1.04], fastDx: 0.12
+};
+
+function naturalSpline(xs, ys) {
+  const n = xs.length, h = [], al = [0], l = [1], mu = [0], z = [0], c = new Array(n).fill(0), b = [], d = [];
+  for (let i = 0; i < n - 1; i++) h.push(xs[i + 1] - xs[i]);
+  for (let i = 1; i < n - 1; i++) al.push(3 / h[i] * (ys[i + 1] - ys[i]) - 3 / h[i - 1] * (ys[i] - ys[i - 1]));
+  for (let i = 1; i < n - 1; i++) { l[i] = 2 * (xs[i + 1] - xs[i - 1]) - h[i - 1] * mu[i - 1]; mu[i] = h[i] / l[i]; z[i] = (al[i] - h[i - 1] * z[i - 1]) / l[i]; }
+  for (let j = n - 2; j >= 0; j--) { c[j] = z[j] - mu[j] * c[j + 1]; b[j] = (ys[j + 1] - ys[j]) / h[j] - h[j] * (c[j + 1] + 2 * c[j]) / 3; d[j] = (c[j + 1] - c[j]) / (3 * h[j]); }
+  return function (x) {
+    if (x <= xs[0]) return ys[0];
+    if (x >= xs[n - 1]) return ys[n - 1];
+    let lo = 0, hi = n - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (xs[m] > x) hi = m; else lo = m; }
+    const dx = x - xs[lo];
+    return ys[lo] + b[lo] * dx + c[lo] * dx * dx + d[lo] * dx * dx * dx;
+  };
+}
+
+// Build design (profiles + landmarks) from user parameters
+function buildDesign(prm) {
+  const sx = prm.L / BASE.L, sw = prm.W / BASE.W;
+  const kx = BASE.kx.map(x => x * sx);
+  kx[4] += prm.rake * 0.5; kx[5] += prm.rake;           // A-pillar / windshield rake
+  kx[9] += prm.rear * BASE.fastDx * sx;                 // fastback pushes glass rearward
+  const s = BASE.s.slice();
+  const roofF = (prm.H - 0.92) / (1.44 - 0.92);
+  const h = BASE.h.map((v, i) => (v - s[i] > 0.1 ? s[i] + (v - s[i]) * roofF : v));
+  for (let k = 0; k < 3; k++) {
+    const i = 8 + k, sed = h[i];
+    const fb = s[i] + (BASE.fastH[k] - s[i]) * roofF;
+    h[i] = sed + (fb - sed) * prm.rear;
+  }
+  const axF = BASE.axF * sx, axR = BASE.axR * sx;
+  const t = BASE.t.map(v => v * sw);
+  const w = BASE.w.map((v, i) => v * sw);
+  const S = naturalSpline(kx, s), Hh = naturalSpline(kx, h), T = naturalSpline(kx, t), Wb = naturalSpline(kx, w), C = naturalSpline(kx, BASE.c);
+  const flare = x => prm.flare * (Math.exp(-(((x - axF) / 0.42) ** 2)) + Math.exp(-(((x - axR) / 0.42) ** 2)));
+  const Ra = 0.44, yc = 0.30, zb0 = 0.22;
+  const zb = x => {
+    let z = zb0;
+    for (const xa of [axF, axR]) { const dx = x - xa; if (Math.abs(dx) < Ra) z = Math.max(z, yc + Math.sqrt(Ra * Ra - dx * dx)); }
+    return z;
+  };
+  return {
+    prm, kx, axF, axR, L: prm.L, sw,
+    S, H: Hh, T, Wd: x => Wb(x) + flare(x), C, zb,
+    land: { xA0: kx[3] + 0.04, xRoofF: kx[5] + 0.02, xRoofR: kx[7] + 0.02 + prm.rear * 0.15, xE: kx[9] + 0.06,
+            xB: (kx[5] + kx[7]) / 2 + 0.06, xC: kx[8] + 0.02 + prm.rear * 0.1 }
+  };
+}
+
+// Control net: rows along length (u), 13 columns across (v)
+function buildNet(D, nStations) {
+  const L = D.L, sw = D.sw;
+  const rows = [];
+  const section = (x, w, zb, s, h, t, c, rnd) => {
+    const half = [
+      [0.965 * w, zb],
+      [w, zb + 0.55 * (s - zb)],
+      [0.995 * w, s],
+      [t + 0.5 * (w - t), s + 0.35 * (h - s)],
+      [t, h],
+      [0.5 * t, h + 0.7 * c]
+    ];
+    const row = [];
+    for (let j = 0; j < 13; j++) {
+      let lat, y;
+      if (j === 6) { lat = 0; y = h + c; }
+      else if (j < 6) { lat = -half[j][0]; y = half[j][1]; }
+      else { lat = half[12 - j][0]; y = half[12 - j][1]; }
+      const f = (lat / w) ** 2;
+      row.push([x + rnd * f, y, lat]);
+    }
+    return row;
+  };
+  const fr = x => 0.26 * Math.exp(-x / 0.28);
+  const rr = x => -0.24 * Math.exp(-(L - x) / 0.28);
+  rows.push(section(0.10, 0.80 * sw, 0.22, 0.23, 0.24, 0.70 * sw, 0, 0.30));
+  rows.push(section(0.00, 0.84 * sw, 0.22, 0.44, 0.50, 0.72 * sw, 0, 0.30));
+  const x0 = D.kx[0], x1 = L - 0.05;
+  for (let i = 0; i < nStations; i++) {
+    const x = x0 + (x1 - x0) * i / (nStations - 1);
+    rows.push(section(x, D.Wd(x), D.zb(x), D.S(x), D.H(x), D.T(x), D.C(x), fr(x) + rr(x)));
+  }
+  rows.push(section(L, 0.82 * sw, 0.26, 0.60, 0.64, 0.72 * sw, 0, -0.26));
+  rows.push(section(L - 0.10, 0.78 * sw, 0.28, 0.29, 0.30, 0.68 * sw, 0, -0.26));
+  return rows;
+}
+
+function clampedKnots(nC, p) {
+  const U = [], spans = nC - p;
+  for (let i = 0; i <= p; i++) U.push(0);
+  for (let i = 1; i < spans; i++) U.push(i / spans);
+  for (let i = 0; i <= p; i++) U.push(1);
+  return U;
+}
+function findSpan(n, p, u, U) {
+  if (u >= U[n + 1]) return n;
+  if (u <= U[p]) return p;
+  let lo = p, hi = n + 1, mid = (lo + hi) >> 1;
+  while (u < U[mid] || u >= U[mid + 1]) { if (u < U[mid]) hi = mid; else lo = mid; mid = (lo + hi) >> 1; }
+  return mid;
+}
+// NURBS Book A2.3
+function dersBasis(i, u, p, nd, U) {
+  const ndu = Array.from({ length: p + 1 }, () => new Float64Array(p + 1));
+  const left = new Float64Array(p + 1), right = new Float64Array(p + 1);
+  ndu[0][0] = 1;
+  for (let j = 1; j <= p; j++) {
+    left[j] = u - U[i + 1 - j]; right[j] = U[i + j] - u; let saved = 0;
+    for (let r = 0; r < j; r++) {
+      ndu[j][r] = right[r + 1] + left[j - r];
+      const temp = ndu[r][j - 1] / ndu[j][r];
+      ndu[r][j] = saved + right[r + 1] * temp;
+      saved = left[j - r] * temp;
+    }
+    ndu[j][j] = saved;
+  }
+  const ders = Array.from({ length: nd + 1 }, () => new Float64Array(p + 1));
+  for (let j = 0; j <= p; j++) ders[0][j] = ndu[j][p];
+  const a = [new Float64Array(p + 2), new Float64Array(p + 2)];
+  for (let r = 0; r <= p; r++) {
+    let s1 = 0, s2 = 1; a[0][0] = 1;
+    for (let k = 1; k <= nd; k++) {
+      let d = 0; const rk = r - k, pk = p - k;
+      if (r >= k) { a[s2][0] = a[s1][0] / ndu[pk + 1][rk]; d = a[s2][0] * ndu[rk][pk]; }
+      const j1 = rk >= -1 ? 1 : -rk;
+      const j2 = (r - 1 <= pk) ? k - 1 : p - r;
+      for (let j = j1; j <= j2; j++) { a[s2][j] = (a[s1][j] - a[s1][j - 1]) / ndu[pk + 1][rk + j]; d += a[s2][j] * ndu[rk + j][pk]; }
+      if (r <= pk) { a[s2][k] = -a[s1][k - 1] / ndu[pk + 1][r]; d += a[s2][k] * ndu[r][pk]; }
+      ders[k][r] = d;
+      const tmp = s1; s1 = s2; s2 = tmp;
+    }
+  }
+  let rr = p;
+  for (let k = 1; k <= nd; k++) { for (let j = 0; j <= p; j++) ders[k][j] *= rr; rr *= (p - k); }
+  return ders;
+}
+
+function makeSurface(net, p) {
+  const m = net.length, n = net[0].length;
+  const U = clampedKnots(m, p), V = clampedKnots(n, p);
+  // side = -1 forces the left polynomial piece at a knot (one-sided limit from the left)
+  const basisU = (u, side) => { let span = findSpan(m - 1, p, u, U); if (side < 0 && span > p && u === U[span]) span--; return { span, d: dersBasis(span, u, p, 2, U) }; };
+  const basisV = (v, side) => { let span = findSpan(n - 1, p, v, V); if (side < 0 && span > p && v === V[span]) span--; return { span, d: dersBasis(span, v, p, 2, V) }; };
+  const out = new Float64Array(18);
+  const evalB = (bu, bv) => evalNet(net, p, bu, bv, out);
+  const S = { net, p, m, n, U, V, basisU, basisV, evalB, orient: 1 };
+  S.eval = (u, v) => evalB(basisU(u), basisV(v));
+  S.geom = (o) => fundamentals(o, S.orient);
+  const g = fundamentals(S.eval(0.5, 0.5), 1);
+  S.orient = g[1] >= 0 ? 1 : -1;
+  return S;
+}
+
+function evalNet(net, p, bu, bv, out) {
+  out.fill(0);
+  for (let a = 0; a <= p; a++) {
+    const row = net[bu.span - p + a];
+    const N0 = bu.d[0][a], N1 = bu.d[1][a], N2 = bu.d[2][a];
+    for (let b = 0; b <= p; b++) {
+      const P = row[bv.span - p + b], x = P[0], y = P[1], z = P[2];
+      const M0 = bv.d[0][b], M1 = bv.d[1][b], M2 = bv.d[2][b];
+      let w = N0 * M0; out[0] += w * x; out[1] += w * y; out[2] += w * z;
+      w = N1 * M0; out[3] += w * x; out[4] += w * y; out[5] += w * z;
+      w = N0 * M1; out[6] += w * x; out[7] += w * y; out[8] += w * z;
+      w = N2 * M0; out[9] += w * x; out[10] += w * y; out[11] += w * z;
+      w = N1 * M1; out[12] += w * x; out[13] += w * y; out[14] += w * z;
+      w = N0 * M2; out[15] += w * x; out[16] += w * y; out[17] += w * z;
+    }
+  }
+  return out;
+}
+
+function fundamentals(o, orient) {
+  const sux = o[3], suy = o[4], suz = o[5], svx = o[6], svy = o[7], svz = o[8];
+  let nx = suy * svz - suz * svy, ny = suz * svx - sux * svz, nz = sux * svy - suy * svx;
+  const ln = Math.hypot(nx, ny, nz) || 1e-12; nx *= orient / ln; ny *= orient / ln; nz *= orient / ln;
+  const E = sux * sux + suy * suy + suz * suz, F = sux * svx + suy * svy + suz * svz, G = svx * svx + svy * svy + svz * svz;
+  const Lf = o[9] * nx + o[10] * ny + o[11] * nz, M = o[12] * nx + o[13] * ny + o[14] * nz, N = o[15] * nx + o[16] * ny + o[17] * nz;
+  const den = (E * G - F * F) || 1e-12;
+  const K = (Lf * N - M * M) / den;
+  const H = -(E * N - 2 * F * M + G * Lf) / (2 * den);
+  return [nx, ny, nz, K, H];
+}
+
+function tessellate(S, NU, NV) {
+  const pos = new Float32Array(NU * NV * 3), nor = new Float32Array(NU * NV * 3), curv = new Float32Array(NU * NV * 2);
+  const bvs = []; for (let j = 0; j < NV; j++) bvs.push(S.basisV(j / (NV - 1)));
+  const absK = [], absH = [];
+  for (let i = 0; i < NU; i++) {
+    const bu = S.basisU(i / (NU - 1));
+    for (let j = 0; j < NV; j++) {
+      const o = S.evalB(bu, bvs[j]);
+      const g = S.geom(o), k = i * NV + j;
+      pos[3 * k] = o[0]; pos[3 * k + 1] = o[1]; pos[3 * k + 2] = o[2];
+      nor[3 * k] = g[0]; nor[3 * k + 1] = g[1]; nor[3 * k + 2] = g[2];
+      curv[2 * k] = g[3]; curv[2 * k + 1] = g[4];
+      if (j % 3 === 0 && i % 3 === 0) { absK.push(Math.abs(g[3])); absH.push(Math.abs(g[4])); }
+    }
+  }
+  const pct = (arr, q) => { arr.sort((a, b) => a - b); return arr[Math.floor(q * (arr.length - 1))] || 1; };
+  const idx = new Uint32Array((NU - 1) * (NV - 1) * 6); let q = 0;
+  for (let i = 0; i < NU - 1; i++) for (let j = 0; j < NV - 1; j++) {
+    const a = i * NV + j, b = (i + 1) * NV + j, c = i * NV + j + 1, d = (i + 1) * NV + j + 1;
+    if (S.orient > 0) { idx[q++] = a; idx[q++] = b; idx[q++] = c; idx[q++] = c; idx[q++] = b; idx[q++] = d; }
+    else { idx[q++] = a; idx[q++] = c; idx[q++] = b; idx[q++] = c; idx[q++] = d; idx[q++] = b; }
+  }
+  return { pos, nor, curv, idx, kRange: pct(absK, 0.85), hRange: pct(absH, 0.85) };
+}
+
+function interiorKnots(U) { const r = []; for (const k of U) if (k > 0 && k < 1 && !r.includes(k)) r.push(k); return r; }
+
+// Numerical G1/G2 check across all patch boundaries (knot lines)
+function continuityCheck(S, hRef) {
+  let dH = 0, dK = 0, dN = 0;
+  const ks = 41;
+  const test = (bu1, bv1, bu2, bv2) => {
+    const g1 = S.geom(S.evalB(bu1, bv1)).slice(), g2 = S.geom(S.evalB(bu2, bv2));
+    dN = Math.max(dN, Math.hypot(g1[0] - g2[0], g1[1] - g2[1], g1[2] - g2[2]));
+    dH = Math.max(dH, Math.abs(g1[4] - g2[4]));
+    dK = Math.max(dK, Math.abs(g1[3] - g2[3]));
+  };
+  for (const uk of interiorKnots(S.U)) {
+    const b1 = S.basisU(uk, -1), b2 = S.basisU(uk, 1);
+    for (let s = 1; s < ks; s++) { const bv = S.basisV(s / ks); test(b1, bv, b2, bv); }
+  }
+  for (const vk of interiorKnots(S.V)) {
+    const b1 = S.basisV(vk, -1), b2 = S.basisV(vk, 1);
+    for (let s = 1; s < ks; s++) { const bu = S.basisU(s / ks); test(bu, b1, bu, b2); }
+  }
+  return { dN, dH, dK, rel: dH / hRef };
+}
+
+// Porcupine comb along an isoparametric curve. dir: 'u' (v fixed) or 'v' (u fixed)
+function comb(S, dir, c, samples) {
+  const pts = [], tips = [], kap = [];
+  for (let s = 0; s < samples; s++) {
+    const t = s / (samples - 1);
+    const o = dir === 'u' ? S.eval(t, c) : S.eval(c, t);
+    const d1 = dir === 'u' ? [o[3], o[4], o[5]] : [o[6], o[7], o[8]];
+    const d2 = dir === 'u' ? [o[9], o[10], o[11]] : [o[15], o[16], o[17]];
+    const cr = [d1[1] * d2[2] - d1[2] * d2[1], d1[2] * d2[0] - d1[0] * d2[2], d1[0] * d2[1] - d1[1] * d2[0]];
+    const l1 = Math.hypot(...d1), lc = Math.hypot(...cr);
+    const k = lc / (l1 ** 3 || 1e-12);
+    let nrm = [cr[1] * d1[2] - cr[2] * d1[1], cr[2] * d1[0] - cr[0] * d1[2], cr[0] * d1[1] - cr[1] * d1[0]];
+    const ln = Math.hypot(...nrm) || 1; nrm = nrm.map(x => x / ln);
+    pts.push([o[0], o[1], o[2]]); kap.push(k); tips.push(nrm);
+  }
+  const sorted = kap.slice().sort((a, b) => a - b), ref = sorted[Math.floor(0.92 * (sorted.length - 1))] || 1;
+  const sc = 0.26 / ref;
+  return pts.map((P, i) => { const l = Math.min(kap[i] * sc, 0.42); return { P, T: [P[0] - tips[i][0] * l, P[1] - tips[i][1] * l, P[2] - tips[i][2] * l] }; });
+}
+
+if (typeof module !== 'undefined') module.exports = { evalNet, fundamentals, clampedKnots, findSpan, dersBasis, BASE, buildDesign, buildNet, makeSurface, tessellate, continuityCheck, comb, interiorKnots };
+
+// ===== Fairing optimisation (runs in a Web Worker; also testable in node) =====
+function greville(U, p, i) { let s = 0; for (let k = 1; k <= p; k++) s += U[i + k]; return s / p; }
+
+// Free variables: one scalar normal offset per control point (left/right mirrored).
+// Hard points kept fixed: 3 rows at each end (bumpers) and the bottom column (rocker / wheel-arch edge).
+function fairVars(net, p) {
+  const S = makeSurface(net, p), m = net.length, vars = [];
+  for (let i = 3; i <= m - 4; i++) for (let j = 1; j <= 6; j++) {
+    const g = S.geom(S.eval(greville(S.U, p, i), greville(S.V, p, j)));
+    const n = [g[0], g[1], j === 6 ? 0 : g[2]], l = Math.hypot(n[0], n[1], n[2]);
+    vars.push({ i, j, n: [n[0] / l, n[1] / l, n[2] / l] });
+  }
+  return vars;
+}
+function applyOffsets(net, vars, t) {
+  const N = net.map(r => r.map(q => q.slice()));
+  for (let k = 0; k < vars.length; k++) {
+    const v = vars[k], d = t[k], n = v.n;
+    const P = N[v.i][v.j]; P[0] += d * n[0]; P[1] += d * n[1]; P[2] += d * n[2];
+    if (v.j !== 6) { const Q = N[v.i][12 - v.j]; Q[0] += d * n[0]; Q[1] += d * n[1]; Q[2] -= d * n[2]; }
+  }
+  return N;
+}
+
+function quadGrid(m, n, p, NU, NV) {
+  const U = clampedKnots(m, p), V = clampedKnots(n, p), bu = [], bv = [];
+  const u0 = 0.07, u1 = 0.93, v0 = 0.07, v1 = 0.93;
+  for (let i = 0; i < NU; i++) { const u = u0 + (u1 - u0) * i / (NU - 1), s = findSpan(m - 1, p, u, U); bu.push({ span: s, d: dersBasis(s, u, p, 2, U) }); }
+  for (let j = 0; j < NV; j++) { const v = v0 + (v1 - v0) * j / (NV - 1), s = findSpan(n - 1, p, v, V); bv.push({ span: s, d: dersBasis(s, v, p, 2, V) }); }
+  return { bu, bv, du: (u1 - u0) / (NU - 1), dv: (v1 - v0) / (NV - 1) };
+}
+
+// kind: 'var' = curvature variation  ∫ |∇H|² dA   (targets waviness)
+//       'bend' = bending energy      ∫ (κ1²+κ2²) dA
+function makeObjective(net0, p, vars, kind, NU = 64, NV = 32) {
+  const m = net0.length, n = net0[0].length, Q = quadGrid(m, n, p, NU, NV);
+  const orient = makeSurface(net0, p).orient;
+  const out = new Float64Array(18), H = new Float64Array(NU * NV), Ar = new Float64Array(NU * NV), X = new Float64Array(NU * NV * 3);
+  function energy(net) {
+    let Eb = 0;
+    for (let i = 0; i < NU; i++) for (let j = 0; j < NV; j++) {
+      evalNet(net, p, Q.bu[i], Q.bv[j], out);
+      const g = fundamentals(out, orient), k = i * NV + j;
+      const cx = out[4] * out[8] - out[5] * out[7], cy = out[5] * out[6] - out[3] * out[8], cz = out[3] * out[7] - out[4] * out[6];
+      const a = Math.sqrt(cx * cx + cy * cy + cz * cz);
+      H[k] = g[4]; Ar[k] = a; X[3 * k] = out[0]; X[3 * k + 1] = out[1]; X[3 * k + 2] = out[2];
+      Eb += (4 * g[4] * g[4] - 2 * g[3]) * a;
+    }
+    if (kind === 'bend') return Eb * Q.du * Q.dv;
+    let Ev = 0;
+    for (let i = 0; i < NU; i++) for (let j = 0; j < NV; j++) {
+      const k = i * NV + j;
+      if (i + 1 < NU) { const k2 = k + NV, d2 = (X[3 * k2] - X[3 * k]) ** 2 + (X[3 * k2 + 1] - X[3 * k + 1]) ** 2 + (X[3 * k2 + 2] - X[3 * k + 2]) ** 2; Ev += (H[k2] - H[k]) ** 2 / (d2 + 1e-12) * Ar[k]; }
+      if (j + 1 < NV) { const k2 = k + 1, d2 = (X[3 * k2] - X[3 * k]) ** 2 + (X[3 * k2 + 1] - X[3 * k + 1]) ** 2 + (X[3 * k2 + 2] - X[3 * k + 2]) ** 2; Ev += (H[k2] - H[k]) ** 2 / (d2 + 1e-12) * Ar[k]; }
+    }
+    return Ev * Q.du * Q.dv;
+  }
+  const E0 = energy(net0);
+  return { E0, energy, rel: t => energy(applyOffsets(net0, vars, t)) / E0 };
+}
+
+// ---------- linear thin-plate fairing: min ∫ |Suu|²+2|Suv|²+|Svv|²  + λ|t|², exact solve, λ by bisection so max|t| = δ ----------
+function cholSolve(A, b, n) {
+  const L = new Float64Array(n * n);
+  for (let i = 0; i < n; i++) for (let j = 0; j <= i; j++) {
+    let s = A[i * n + j]; for (let k = 0; k < j; k++) s -= L[i * n + k] * L[j * n + k];
+    if (i === j) { if (s <= 0) return null; L[i * n + i] = Math.sqrt(s); } else L[i * n + j] = s / L[j * n + j];
+  }
+  const y = new Float64Array(n);
+  for (let i = 0; i < n; i++) { let s = b[i]; for (let k = 0; k < i; k++) s -= L[i * n + k] * y[k]; y[i] = s / L[i * n + i]; }
+  const x = new Float64Array(n);
+  for (let i = n - 1; i >= 0; i--) { let s = y[i]; for (let k = i + 1; k < n; k++) s -= L[k * n + i] * x[k]; x[i] = s / L[i * n + i]; }
+  return x;
+}
+function thinPlate(net0, p, vars, delta) {
+  const m = net0.length, nC = net0[0].length, nv = vars.length, Q = quadGrid(m, nC, p, 72, 36);
+  const map = new Map();
+  vars.forEach((v, k) => { map.set(v.i * nC + v.j, [k, 1]); if (v.j !== 6) map.set(v.i * nC + 12 - v.j, [k, -1]); });
+  const AtA = new Float64Array(nv * nv), Atb = new Float64Array(nv), out = new Float64Array(18);
+  const coef = new Float64Array(nv * 3), touched = [];
+  const terms = [[2, 0, 1, 9], [1, 1, Math.SQRT2, 12], [0, 2, 1, 15]]; // (du order, dv order, weight, offset in out)
+  for (const bu of Q.bu) for (const bv of Q.bv) {
+    evalNet(net0, p, bu, bv, out);
+    for (const [ou, ov, w, off] of terms) {
+      touched.length = 0;
+      for (let a = 0; a <= p; a++) for (let b = 0; b <= p; b++) {
+        const e = map.get((bu.span - p + a) * nC + (bv.span - p + b)); if (!e) continue;
+        const [k, mz] = e, c = w * bu.d[ou][a] * bv.d[ov][b], nn = vars[k].n;
+        if (coef[3 * k] === 0 && coef[3 * k + 1] === 0 && coef[3 * k + 2] === 0) touched.push(k);
+        coef[3 * k] += c * nn[0]; coef[3 * k + 1] += c * nn[1]; coef[3 * k + 2] += c * nn[2] * mz;
+      }
+      for (let c = 0; c < 3; c++) {
+        const bval = w * out[off + c];
+        for (const k1 of touched) {
+          const a1 = coef[3 * k1 + c]; if (!a1) continue;
+          Atb[k1] += a1 * bval;
+          for (const k2 of touched) AtA[k1 * nv + k2] += a1 * coef[3 * k2 + c];
+        }
+      }
+      for (const k of touched) { coef[3 * k] = coef[3 * k + 1] = coef[3 * k + 2] = 0; }
+    }
+  }
+  let tr = 0; for (let i = 0; i < nv; i++) tr += AtA[i * nv + i]; tr /= nv;
+  const solve = lam => { const A = AtA.slice(); for (let i = 0; i < nv; i++) A[i * nv + i] += lam; return cholSolve(A, Atb.map(x => -x), nv); };
+  const maxAbs = t => t.reduce((s, x) => Math.max(s, Math.abs(x)), 0);
+  let lo = Math.log(tr * 1e-7), hi = Math.log(tr * 1e3), best = solve(Math.exp(hi));
+  const t0 = solve(Math.exp(lo));
+  if (t0 && maxAbs(t0) <= delta) return Array.from(t0);
+  for (let it = 0; it < 40; it++) {
+    const mid = (lo + hi) / 2, t = solve(Math.exp(mid));
+    if (t && maxAbs(t) <= delta) { best = t; hi = mid; } else lo = mid;
+  }
+  return Array.from(best);
+}
+
+// ---------- metaheuristics on the nonlinear energy (box |t_k| ≤ δ) ----------
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function initPop(NP, D, delta, R, seeds) {
+  const pop = [];
+  for (const s of seeds) pop.push(Float64Array.from(s));
+  const centre = seeds.length > 1 ? seeds[1] : seeds[0];
+  while (pop.length < NP) {
+    const base = pop.length % 2 && seeds.length > 1 ? centre : seeds[0];
+    const spread = seeds.length > 1 ? 0.15 : 0.3;
+    pop.push(Float64Array.from({ length: D }, (_, j) => Math.max(-delta, Math.min(delta, base[j] + (2 * R() - 1) * spread * delta))));
+  }
+  return pop;
+}
+function runMeta(method, f, D, delta, budget, seeds, cb, seed = 7, shouldStop = () => false) {
+  const R = rng(seed), NP = 30, pen = 0.05;
+  const F = t => { let s = 0; for (let j = 0; j < D; j++) s += (t[j] / delta) ** 2; return f(t) + pen * s / D; };
+  const pop = initPop(NP, D, delta, R, seeds), fit = pop.map(F);
+  let evals = NP, bi = fit.indexOf(Math.min(...fit)), best = pop[bi].slice(), bestF = fit[bi];
+  const hist = [[evals, bestF]];
+  const clip = x => Math.max(-delta, Math.min(delta, x));
+  const report = () => { hist.push([evals, bestF]); cb && cb(evals, bestF, best, hist); };
+  if (method === 'jde') {
+    const Fi = new Float64Array(NP).fill(0.5), CRi = new Float64Array(NP).fill(0.9), tr = new Float64Array(D);
+    while (evals < budget && !shouldStop()) {
+      for (let i = 0; i < NP && evals < budget; i++) {
+        const Fn = R() < 0.1 ? 0.1 + 0.9 * R() : Fi[i], CRn = R() < 0.1 ? R() : CRi[i];
+        let r1, r2, r3; do r1 = R() * NP | 0; while (r1 === i); do r2 = R() * NP | 0; while (r2 === i || r2 === r1); do r3 = R() * NP | 0; while (r3 === i || r3 === r1 || r3 === r2);
+        const jr = R() * D | 0;
+        for (let j = 0; j < D; j++) {
+          if (R() < CRn || j === jr) { let x = pop[r1][j] + Fn * (pop[r2][j] - pop[r3][j]); if (x > delta) x = (delta + pop[i][j]) / 2; if (x < -delta) x = (-delta + pop[i][j]) / 2; tr[j] = x; }
+          else tr[j] = pop[i][j];
+        }
+        const ft = F(tr); evals++;
+        if (ft <= fit[i]) { pop[i].set(tr); fit[i] = ft; Fi[i] = Fn; CRi[i] = CRn; if (ft < bestF) { bestF = ft; best = tr.slice(); } }
+      }
+      report();
+    }
+  } else if (method === 'pso') {
+    const w = 0.729, c1 = 1.49445, c2 = 1.49445, vmax = 0.25 * delta;
+    const V = pop.map(() => new Float64Array(D)), pb = pop.map(x => x.slice()), pbf = fit.slice();
+    while (evals < budget && !shouldStop()) {
+      for (let i = 0; i < NP && evals < budget; i++) {
+        const x = pop[i], v = V[i];
+        for (let j = 0; j < D; j++) {
+          v[j] = w * v[j] + c1 * R() * (pb[i][j] - x[j]) + c2 * R() * (best[j] - x[j]);
+          v[j] = Math.max(-vmax, Math.min(vmax, v[j])); x[j] = clip(x[j] + v[j]);
+        }
+        const fx = F(x); evals++;
+        if (fx < pbf[i]) { pbf[i] = fx; pb[i] = x.slice(); if (fx < bestF) { bestF = fx; best = x.slice(); } }
+      }
+      report();
+    }
+  } else if (method === 'gwo') {
+    const maxIt = Math.ceil((budget - NP) / NP); let it = 0;
+    const order = () => fit.map((f, i) => [f, i]).sort((a, b) => a[0] - b[0]).slice(0, 3).map(e => pop[e[1]].slice());
+    let [A, B, Dl] = order();
+    while (evals < budget && !shouldStop()) {
+      const a = 2 - 2 * it / maxIt;
+      for (let i = 0; i < NP && evals < budget; i++) {
+        const x = pop[i];
+        for (let j = 0; j < D; j++) {
+          let s = 0;
+          for (const L of [A, B, Dl]) { const a1 = 2 * a * R() - a, c1 = 2 * R(); s += L[j] - a1 * Math.abs(c1 * L[j] - x[j]); }
+          x[j] = clip(s / 3);
+        }
+        fit[i] = F(x); evals++;
+        if (fit[i] < bestF) { bestF = fit[i]; best = x.slice(); }
+      }
+      [A, B, Dl] = order(); it++;
+      report();
+    }
+  }
+  return { best, bestF, evals, hist };
+}
+
+// Reduced (smooth) design space: offset field t(i,j) = Σ c_ab B_a(i) B_b(j) with coarse cubic B-splines.
+// Partition of unity ⇒ |c| ≤ δ guarantees |t| ≤ δ, and the field cannot carry control-point-level noise.
+function reducedBasis(vars, Ka = 9, Kb = 4) {
+  const is = vars.map(v => v.i), js = vars.map(v => v.j);
+  const i0 = Math.min(...is), i1 = Math.max(...is), j0 = Math.min(...js), j1 = Math.max(...js);
+  const basis = (K, s) => { const U = clampedKnots(K, 3), sp = findSpan(K - 1, 3, s, U), d = dersBasis(sp, s, 3, 0, U)[0], out = new Float64Array(K); for (let a = 0; a <= 3; a++) out[sp - 3 + a] = d[a]; return out; };
+  return vars.map(v => {
+    const bi = basis(Ka, (v.i - i0) / (i1 - i0)), bj = basis(Kb, (v.j - j0) / (j1 - j0)), row = new Float64Array(Ka * Kb);
+    for (let a = 0; a < Ka; a++) for (let b = 0; b < Kb; b++) row[a * Kb + b] = bi[a] * bj[b];
+    return row;
+  });
+}
+function expand(Phi, c) { return Phi.map(r => { let s = 0; for (let k = 0; k < r.length; k++) s += r[k] * c[k]; return s; }); }
+function project(Phi, t, delta) {
+  const D = Phi[0].length, A = new Float64Array(D * D), b = new Float64Array(D);
+  Phi.forEach((r, k) => { for (let a = 0; a < D; a++) { b[a] += r[a] * t[k]; for (let c = 0; c < D; c++) A[a * D + c] += r[a] * r[c]; } });
+  for (let a = 0; a < D; a++) A[a * D + a] += 1e-9;
+  return Array.from(cholSolve(A, b, D)).map(x => Math.max(-delta, Math.min(delta, x)));
+}
+
+if (typeof module !== 'undefined') module.exports = { reducedBasis, expand, project, fairVars, applyOffsets, makeObjective, thinPlate, runMeta };
+
+// ---------- worker protocol ----------
+if (typeof self !== 'undefined' && typeof window === 'undefined' && typeof module === 'undefined') {
+  let stop = false;
+  self.onmessage = (e) => {
+    const msg = e.data;
+    if (msg.cmd === 'stop') { stop = true; return; }
+    if (msg.cmd !== 'run') return;
+    stop = false;
+    const { net0, p, method, kind, delta, budget, seed } = msg;
+    const t0 = performance.now();
+    const vars = fairVars(net0, p), D = vars.length;
+    const objV = makeObjective(net0, p, vars, 'var'), objB = makeObjective(net0, p, vars, 'bend');
+    const obj = kind === 'bend' ? objB : objV;
+    const summary = (t) => ({ relVar: objV.rel(t), relBend: objB.rel(t), maxDev: t.reduce((s, x) => Math.max(s, Math.abs(x)), 0) });
+    const reduced = msg.space !== 'full' && method !== 'tp';
+    const Phi = reduced ? reducedBasis(vars) : null;
+    const Dm = reduced ? Phi[0].length : D;
+    const toT = c => reduced ? expand(Phi, c) : Array.from(c);
+    const f = reduced ? (c => obj.rel(expand(Phi, c))) : obj.rel;
+    let last = 0;
+    const cb = (ev, fv, best, hist) => { const now = performance.now(); if (now - last > 350) { last = now; self.postMessage({ type: 'progress', vars, best: toT(best), evals: ev, f: fv, hist, Dm }); } };
+    let result;
+    if (method === 'tp') {
+      const tp = thinPlate(net0, p, vars, delta);
+      result = { best: tp, evals: 1, hist: [[0, 1], [1, obj.rel(tp)]] };
+    } else {
+      const seeds = [new Float64Array(Dm)];
+      if (method === 'hyb') { const tp = thinPlate(net0, p, vars, delta); seeds.push(Float64Array.from(reduced ? project(Phi, tp, delta) : tp)); }
+      result = runMeta(method === 'hyb' ? 'jde' : method, f, Dm, delta, budget, seeds, cb, seed, () => stop);
+      result.best = toT(result.best);
+    }
+    const best = Array.from(result.best);
+    self.postMessage({ type: 'done', vars, best, evals: result.evals, hist: result.hist, ms: performance.now() - t0, D, Dm, ...summary(best), stopped: stop });
+  };
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ===== B-spline car body geometry (pure math, no three.js) =====
+const BASE = {
+  L: 4.60, W: 1.82, axF: 0.95, axR: 3.70, wheelR: 0.33,
+  kx: [0.05, 0.40, 0.95, 1.45, 1.75, 2.10, 2.55, 3.00, 3.40, 3.80, 4.20, 4.55],
+  s:  [0.66, 0.76, 0.84, 0.88, 0.90, 0.91, 0.92, 0.93, 0.94, 0.95, 0.95, 0.91],
+  h:  [0.70, 0.80, 0.87, 0.92, 1.08, 1.35, 1.44, 1.42, 1.27, 1.03, 0.99, 0.94],
+  t:  [0.74, 0.78, 0.78, 0.76, 0.70, 0.64, 0.62, 0.62, 0.66, 0.76, 0.78, 0.76],
+  w:  [0.86, 0.89, 0.91, 0.90, 0.90, 0.90, 0.90, 0.90, 0.91, 0.91, 0.89, 0.85],
+  c:  [0.01, 0.02, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.02, 0.02, 0.01],
+  fastH: [1.36, 1.20, 1.04], fastDx: 0.12
+};
+
+function naturalSpline(xs, ys) {
+  const n = xs.length, h = [], al = [0], l = [1], mu = [0], z = [0], c = new Array(n).fill(0), b = [], d = [];
+  for (let i = 0; i < n - 1; i++) h.push(xs[i + 1] - xs[i]);
+  for (let i = 1; i < n - 1; i++) al.push(3 / h[i] * (ys[i + 1] - ys[i]) - 3 / h[i - 1] * (ys[i] - ys[i - 1]));
+  for (let i = 1; i < n - 1; i++) { l[i] = 2 * (xs[i + 1] - xs[i - 1]) - h[i - 1] * mu[i - 1]; mu[i] = h[i] / l[i]; z[i] = (al[i] - h[i - 1] * z[i - 1]) / l[i]; }
+  for (let j = n - 2; j >= 0; j--) { c[j] = z[j] - mu[j] * c[j + 1]; b[j] = (ys[j + 1] - ys[j]) / h[j] - h[j] * (c[j + 1] + 2 * c[j]) / 3; d[j] = (c[j + 1] - c[j]) / (3 * h[j]); }
+  return function (x) {
+    if (x <= xs[0]) return ys[0];
+    if (x >= xs[n - 1]) return ys[n - 1];
+    let lo = 0, hi = n - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (xs[m] > x) hi = m; else lo = m; }
+    const dx = x - xs[lo];
+    return ys[lo] + b[lo] * dx + c[lo] * dx * dx + d[lo] * dx * dx * dx;
+  };
+}
+
+// Build design (profiles + landmarks) from user parameters
+function buildDesign(prm) {
+  const sx = prm.L / BASE.L, sw = prm.W / BASE.W;
+  const kx = BASE.kx.map(x => x * sx);
+  kx[4] += prm.rake * 0.5; kx[5] += prm.rake;           // A-pillar / windshield rake
+  kx[9] += prm.rear * BASE.fastDx * sx;                 // fastback pushes glass rearward
+  const s = BASE.s.slice();
+  const roofF = (prm.H - 0.92) / (1.44 - 0.92);
+  const h = BASE.h.map((v, i) => (v - s[i] > 0.1 ? s[i] + (v - s[i]) * roofF : v));
+  for (let k = 0; k < 3; k++) {
+    const i = 8 + k, sed = h[i];
+    const fb = s[i] + (BASE.fastH[k] - s[i]) * roofF;
+    h[i] = sed + (fb - sed) * prm.rear;
+  }
+  const axF = BASE.axF * sx, axR = BASE.axR * sx;
+  const t = BASE.t.map(v => v * sw);
+  const w = BASE.w.map((v, i) => v * sw);
+  const S = naturalSpline(kx, s), Hh = naturalSpline(kx, h), T = naturalSpline(kx, t), Wb = naturalSpline(kx, w), C = naturalSpline(kx, BASE.c);
+  const flare = x => prm.flare * (Math.exp(-(((x - axF) / 0.42) ** 2)) + Math.exp(-(((x - axR) / 0.42) ** 2)));
+  const Ra = 0.44, yc = 0.30, zb0 = 0.22;
+  const zb = x => {
+    let z = zb0;
+    for (const xa of [axF, axR]) { const dx = x - xa; if (Math.abs(dx) < Ra) z = Math.max(z, yc + Math.sqrt(Ra * Ra - dx * dx)); }
+    return z;
+  };
+  return {
+    prm, kx, axF, axR, L: prm.L, sw,
+    S, H: Hh, T, Wd: x => Wb(x) + flare(x), C, zb,
+    land: { xA0: kx[3] + 0.04, xRoofF: kx[5] + 0.02, xRoofR: kx[7] + 0.02 + prm.rear * 0.15, xE: kx[9] + 0.06,
+            xB: (kx[5] + kx[7]) / 2 + 0.06, xC: kx[8] + 0.02 + prm.rear * 0.1 }
+  };
+}
+
+// Control net: rows along length (u), 13 columns across (v)
+function buildNet(D, nStations) {
+  const L = D.L, sw = D.sw;
+  const rows = [];
+  const section = (x, w, zb, s, h, t, c, rnd) => {
+    const half = [
+      [0.965 * w, zb],
+      [w, zb + 0.55 * (s - zb)],
+      [0.995 * w, s],
+      [t + 0.5 * (w - t), s + 0.35 * (h - s)],
+      [t, h],
+      [0.5 * t, h + 0.7 * c]
+    ];
+    const row = [];
+    for (let j = 0; j < 13; j++) {
+      let lat, y;
+      if (j === 6) { lat = 0; y = h + c; }
+      else if (j < 6) { lat = -half[j][0]; y = half[j][1]; }
+      else { lat = half[12 - j][0]; y = half[12 - j][1]; }
+      const f = (lat / w) ** 2;
+      row.push([x + rnd * f, y, lat]);
+    }
+    return row;
+  };
+  const fr = x => 0.26 * Math.exp(-x / 0.28);
+  const rr = x => -0.24 * Math.exp(-(L - x) / 0.28);
+  rows.push(section(0.10, 0.80 * sw, 0.22, 0.23, 0.24, 0.70 * sw, 0, 0.30));
+  rows.push(section(0.00, 0.84 * sw, 0.22, 0.44, 0.50, 0.72 * sw, 0, 0.30));
+  const x0 = D.kx[0], x1 = L - 0.05;
+  for (let i = 0; i < nStations; i++) {
+    const x = x0 + (x1 - x0) * i / (nStations - 1);
+    rows.push(section(x, D.Wd(x), D.zb(x), D.S(x), D.H(x), D.T(x), D.C(x), fr(x) + rr(x)));
+  }
+  rows.push(section(L, 0.82 * sw, 0.26, 0.60, 0.64, 0.72 * sw, 0, -0.26));
+  rows.push(section(L - 0.10, 0.78 * sw, 0.28, 0.29, 0.30, 0.68 * sw, 0, -0.26));
+  return rows;
+}
+
+function clampedKnots(nC, p) {
+  const U = [], spans = nC - p;
+  for (let i = 0; i <= p; i++) U.push(0);
+  for (let i = 1; i < spans; i++) U.push(i / spans);
+  for (let i = 0; i <= p; i++) U.push(1);
+  return U;
+}
+function findSpan(n, p, u, U) {
+  if (u >= U[n + 1]) return n;
+  if (u <= U[p]) return p;
+  let lo = p, hi = n + 1, mid = (lo + hi) >> 1;
+  while (u < U[mid] || u >= U[mid + 1]) { if (u < U[mid]) hi = mid; else lo = mid; mid = (lo + hi) >> 1; }
+  return mid;
+}
+// NURBS Book A2.3
+function dersBasis(i, u, p, nd, U) {
+  const ndu = Array.from({ length: p + 1 }, () => new Float64Array(p + 1));
+  const left = new Float64Array(p + 1), right = new Float64Array(p + 1);
+  ndu[0][0] = 1;
+  for (let j = 1; j <= p; j++) {
+    left[j] = u - U[i + 1 - j]; right[j] = U[i + j] - u; let saved = 0;
+    for (let r = 0; r < j; r++) {
+      ndu[j][r] = right[r + 1] + left[j - r];
+      const temp = ndu[r][j - 1] / ndu[j][r];
+      ndu[r][j] = saved + right[r + 1] * temp;
+      saved = left[j - r] * temp;
+    }
+    ndu[j][j] = saved;
+  }
+  const ders = Array.from({ length: nd + 1 }, () => new Float64Array(p + 1));
+  for (let j = 0; j <= p; j++) ders[0][j] = ndu[j][p];
+  const a = [new Float64Array(p + 2), new Float64Array(p + 2)];
+  for (let r = 0; r <= p; r++) {
+    let s1 = 0, s2 = 1; a[0][0] = 1;
+    for (let k = 1; k <= nd; k++) {
+      let d = 0; const rk = r - k, pk = p - k;
+      if (r >= k) { a[s2][0] = a[s1][0] / ndu[pk + 1][rk]; d = a[s2][0] * ndu[rk][pk]; }
+      const j1 = rk >= -1 ? 1 : -rk;
+      const j2 = (r - 1 <= pk) ? k - 1 : p - r;
+      for (let j = j1; j <= j2; j++) { a[s2][j] = (a[s1][j] - a[s1][j - 1]) / ndu[pk + 1][rk + j]; d += a[s2][j] * ndu[rk + j][pk]; }
+      if (r <= pk) { a[s2][k] = -a[s1][k - 1] / ndu[pk + 1][r]; d += a[s2][k] * ndu[r][pk]; }
+      ders[k][r] = d;
+      const tmp = s1; s1 = s2; s2 = tmp;
+    }
+  }
+  let rr = p;
+  for (let k = 1; k <= nd; k++) { for (let j = 0; j <= p; j++) ders[k][j] *= rr; rr *= (p - k); }
+  return ders;
+}
+
+function makeSurface(net, p) {
+  const m = net.length, n = net[0].length;
+  const U = clampedKnots(m, p), V = clampedKnots(n, p);
+  // side = -1 forces the left polynomial piece at a knot (one-sided limit from the left)
+  const basisU = (u, side) => { let span = findSpan(m - 1, p, u, U); if (side < 0 && span > p && u === U[span]) span--; return { span, d: dersBasis(span, u, p, 2, U) }; };
+  const basisV = (v, side) => { let span = findSpan(n - 1, p, v, V); if (side < 0 && span > p && v === V[span]) span--; return { span, d: dersBasis(span, v, p, 2, V) }; };
+  const out = new Float64Array(18);
+  const evalB = (bu, bv) => evalNet(net, p, bu, bv, out);
+  const S = { net, p, m, n, U, V, basisU, basisV, evalB, orient: 1 };
+  S.eval = (u, v) => evalB(basisU(u), basisV(v));
+  S.geom = (o) => fundamentals(o, S.orient);
+  const g = fundamentals(S.eval(0.5, 0.5), 1);
+  S.orient = g[1] >= 0 ? 1 : -1;
+  return S;
+}
+
+function evalNet(net, p, bu, bv, out) {
+  out.fill(0);
+  for (let a = 0; a <= p; a++) {
+    const row = net[bu.span - p + a];
+    const N0 = bu.d[0][a], N1 = bu.d[1][a], N2 = bu.d[2][a];
+    for (let b = 0; b <= p; b++) {
+      const P = row[bv.span - p + b], x = P[0], y = P[1], z = P[2];
+      const M0 = bv.d[0][b], M1 = bv.d[1][b], M2 = bv.d[2][b];
+      let w = N0 * M0; out[0] += w * x; out[1] += w * y; out[2] += w * z;
+      w = N1 * M0; out[3] += w * x; out[4] += w * y; out[5] += w * z;
+      w = N0 * M1; out[6] += w * x; out[7] += w * y; out[8] += w * z;
+      w = N2 * M0; out[9] += w * x; out[10] += w * y; out[11] += w * z;
+      w = N1 * M1; out[12] += w * x; out[13] += w * y; out[14] += w * z;
+      w = N0 * M2; out[15] += w * x; out[16] += w * y; out[17] += w * z;
+    }
+  }
+  return out;
+}
+
+function fundamentals(o, orient) {
+  const sux = o[3], suy = o[4], suz = o[5], svx = o[6], svy = o[7], svz = o[8];
+  let nx = suy * svz - suz * svy, ny = suz * svx - sux * svz, nz = sux * svy - suy * svx;
+  const ln = Math.hypot(nx, ny, nz) || 1e-12; nx *= orient / ln; ny *= orient / ln; nz *= orient / ln;
+  const E = sux * sux + suy * suy + suz * suz, F = sux * svx + suy * svy + suz * svz, G = svx * svx + svy * svy + svz * svz;
+  const Lf = o[9] * nx + o[10] * ny + o[11] * nz, M = o[12] * nx + o[13] * ny + o[14] * nz, N = o[15] * nx + o[16] * ny + o[17] * nz;
+  const den = (E * G - F * F) || 1e-12;
+  const K = (Lf * N - M * M) / den;
+  const H = -(E * N - 2 * F * M + G * Lf) / (2 * den);
+  return [nx, ny, nz, K, H];
+}
+
+function tessellate(S, NU, NV) {
+  const pos = new Float32Array(NU * NV * 3), nor = new Float32Array(NU * NV * 3), curv = new Float32Array(NU * NV * 2);
+  const bvs = []; for (let j = 0; j < NV; j++) bvs.push(S.basisV(j / (NV - 1)));
+  const absK = [], absH = [];
+  for (let i = 0; i < NU; i++) {
+    const bu = S.basisU(i / (NU - 1));
+    for (let j = 0; j < NV; j++) {
+      const o = S.evalB(bu, bvs[j]);
+      const g = S.geom(o), k = i * NV + j;
+      pos[3 * k] = o[0]; pos[3 * k + 1] = o[1]; pos[3 * k + 2] = o[2];
+      nor[3 * k] = g[0]; nor[3 * k + 1] = g[1]; nor[3 * k + 2] = g[2];
+      curv[2 * k] = g[3]; curv[2 * k + 1] = g[4];
+      if (j % 3 === 0 && i % 3 === 0) { absK.push(Math.abs(g[3])); absH.push(Math.abs(g[4])); }
+    }
+  }
+  const pct = (arr, q) => { arr.sort((a, b) => a - b); return arr[Math.floor(q * (arr.length - 1))] || 1; };
+  const idx = new Uint32Array((NU - 1) * (NV - 1) * 6); let q = 0;
+  for (let i = 0; i < NU - 1; i++) for (let j = 0; j < NV - 1; j++) {
+    const a = i * NV + j, b = (i + 1) * NV + j, c = i * NV + j + 1, d = (i + 1) * NV + j + 1;
+    if (S.orient > 0) { idx[q++] = a; idx[q++] = b; idx[q++] = c; idx[q++] = c; idx[q++] = b; idx[q++] = d; }
+    else { idx[q++] = a; idx[q++] = c; idx[q++] = b; idx[q++] = c; idx[q++] = d; idx[q++] = b; }
+  }
+  return { pos, nor, curv, idx, kRange: pct(absK, 0.85), hRange: pct(absH, 0.85) };
+}
+
+function interiorKnots(U) { const r = []; for (const k of U) if (k > 0 && k < 1 && !r.includes(k)) r.push(k); return r; }
+
+// Numerical G1/G2 check across all patch boundaries (knot lines)
+function continuityCheck(S, hRef) {
+  let dH = 0, dK = 0, dN = 0;
+  const ks = 41;
+  const test = (bu1, bv1, bu2, bv2) => {
+    const g1 = S.geom(S.evalB(bu1, bv1)).slice(), g2 = S.geom(S.evalB(bu2, bv2));
+    dN = Math.max(dN, Math.hypot(g1[0] - g2[0], g1[1] - g2[1], g1[2] - g2[2]));
+    dH = Math.max(dH, Math.abs(g1[4] - g2[4]));
+    dK = Math.max(dK, Math.abs(g1[3] - g2[3]));
+  };
+  for (const uk of interiorKnots(S.U)) {
+    const b1 = S.basisU(uk, -1), b2 = S.basisU(uk, 1);
+    for (let s = 1; s < ks; s++) { const bv = S.basisV(s / ks); test(b1, bv, b2, bv); }
+  }
+  for (const vk of interiorKnots(S.V)) {
+    const b1 = S.basisV(vk, -1), b2 = S.basisV(vk, 1);
+    for (let s = 1; s < ks; s++) { const bu = S.basisU(s / ks); test(bu, b1, bu, b2); }
+  }
+  return { dN, dH, dK, rel: dH / hRef };
+}
+
+// Porcupine comb along an isoparametric curve. dir: 'u' (v fixed) or 'v' (u fixed)
+function comb(S, dir, c, samples) {
+  const pts = [], tips = [], kap = [];
+  for (let s = 0; s < samples; s++) {
+    const t = s / (samples - 1);
+    const o = dir === 'u' ? S.eval(t, c) : S.eval(c, t);
+    const d1 = dir === 'u' ? [o[3], o[4], o[5]] : [o[6], o[7], o[8]];
+    const d2 = dir === 'u' ? [o[9], o[10], o[11]] : [o[15], o[16], o[17]];
+    const cr = [d1[1] * d2[2] - d1[2] * d2[1], d1[2] * d2[0] - d1[0] * d2[2], d1[0] * d2[1] - d1[1] * d2[0]];
+    const l1 = Math.hypot(...d1), lc = Math.hypot(...cr);
+    const k = lc / (l1 ** 3 || 1e-12);
+    let nrm = [cr[1] * d1[2] - cr[2] * d1[1], cr[2] * d1[0] - cr[0] * d1[2], cr[0] * d1[1] - cr[1] * d1[0]];
+    const ln = Math.hypot(...nrm) || 1; nrm = nrm.map(x => x / ln);
+    pts.push([o[0], o[1], o[2]]); kap.push(k); tips.push(nrm);
+  }
+  const sorted = kap.slice().sort((a, b) => a - b), ref = sorted[Math.floor(0.92 * (sorted.length - 1))] || 1;
+  const sc = 0.26 / ref;
+  return pts.map((P, i) => { const l = Math.min(kap[i] * sc, 0.42); return { P, T: [P[0] - tips[i][0] * l, P[1] - tips[i][1] * l, P[2] - tips[i][2] * l] }; });
+}
+
+if (typeof module !== 'undefined') module.exports = { evalNet, fundamentals, clampedKnots, findSpan, dersBasis, BASE, buildDesign, buildNet, makeSurface, tessellate, continuityCheck, comb, interiorKnots };
+
+// ===== Fairing optimisation (runs in a Web Worker; also testable in node) =====
+function greville(U, p, i) { let s = 0; for (let k = 1; k <= p; k++) s += U[i + k]; return s / p; }
+
+// Free variables: one scalar normal offset per control point (left/right mirrored).
+// Hard points kept fixed: 3 rows at each end (bumpers) and the bottom column (rocker / wheel-arch edge).
+function fairVars(net, p) {
+  const S = makeSurface(net, p), m = net.length, vars = [];
+  for (let i = 3; i <= m - 4; i++) for (let j = 1; j <= 6; j++) {
+    const g = S.geom(S.eval(greville(S.U, p, i), greville(S.V, p, j)));
+    const n = [g[0], g[1], j === 6 ? 0 : g[2]], l = Math.hypot(n[0], n[1], n[2]);
+    vars.push({ i, j, n: [n[0] / l, n[1] / l, n[2] / l] });
+  }
+  return vars;
+}
+function applyOffsets(net, vars, t) {
+  const N = net.map(r => r.map(q => q.slice()));
+  for (let k = 0; k < vars.length; k++) {
+    const v = vars[k], d = t[k], n = v.n;
+    const P = N[v.i][v.j]; P[0] += d * n[0]; P[1] += d * n[1]; P[2] += d * n[2];
+    if (v.j !== 6) { const Q = N[v.i][12 - v.j]; Q[0] += d * n[0]; Q[1] += d * n[1]; Q[2] -= d * n[2]; }
+  }
+  return N;
+}
+
+function quadGrid(m, n, p, NU, NV) {
+  const U = clampedKnots(m, p), V = clampedKnots(n, p), bu = [], bv = [];
+  const u0 = 0.07, u1 = 0.93, v0 = 0.07, v1 = 0.93;
+  for (let i = 0; i < NU; i++) { const u = u0 + (u1 - u0) * i / (NU - 1), s = findSpan(m - 1, p, u, U); bu.push({ span: s, d: dersBasis(s, u, p, 2, U) }); }
+  for (let j = 0; j < NV; j++) { const v = v0 + (v1 - v0) * j / (NV - 1), s = findSpan(n - 1, p, v, V); bv.push({ span: s, d: dersBasis(s, v, p, 2, V) }); }
+  return { bu, bv, du: (u1 - u0) / (NU - 1), dv: (v1 - v0) / (NV - 1) };
+}
+
+// kind: 'var' = curvature variation  ∫ |∇H|² dA   (targets waviness)
+//       'bend' = bending energy      ∫ (κ1²+κ2²) dA
+function makeObjective(net0, p, vars, kind, NU = 64, NV = 32) {
+  const m = net0.length, n = net0[0].length, Q = quadGrid(m, n, p, NU, NV);
+  const orient = makeSurface(net0, p).orient;
+  const out = new Float64Array(18), H = new Float64Array(NU * NV), Ar = new Float64Array(NU * NV), X = new Float64Array(NU * NV * 3);
+  function energy(net) {
+    let Eb = 0;
+    for (let i = 0; i < NU; i++) for (let j = 0; j < NV; j++) {
+      evalNet(net, p, Q.bu[i], Q.bv[j], out);
+      const g = fundamentals(out, orient), k = i * NV + j;
+      const cx = out[4] * out[8] - out[5] * out[7], cy = out[5] * out[6] - out[3] * out[8], cz = out[3] * out[7] - out[4] * out[6];
+      const a = Math.sqrt(cx * cx + cy * cy + cz * cz);
+      H[k] = g[4]; Ar[k] = a; X[3 * k] = out[0]; X[3 * k + 1] = out[1]; X[3 * k + 2] = out[2];
+      Eb += (4 * g[4] * g[4] - 2 * g[3]) * a;
+    }
+    if (kind === 'bend') return Eb * Q.du * Q.dv;
+    let Ev = 0;
+    for (let i = 0; i < NU; i++) for (let j = 0; j < NV; j++) {
+      const k = i * NV + j;
+      if (i + 1 < NU) { const k2 = k + NV, d2 = (X[3 * k2] - X[3 * k]) ** 2 + (X[3 * k2 + 1] - X[3 * k + 1]) ** 2 + (X[3 * k2 + 2] - X[3 * k + 2]) ** 2; Ev += (H[k2] - H[k]) ** 2 / (d2 + 1e-12) * Ar[k]; }
+      if (j + 1 < NV) { const k2 = k + 1, d2 = (X[3 * k2] - X[3 * k]) ** 2 + (X[3 * k2 + 1] - X[3 * k + 1]) ** 2 + (X[3 * k2 + 2] - X[3 * k + 2]) ** 2; Ev += (H[k2] - H[k]) ** 2 / (d2 + 1e-12) * Ar[k]; }
+    }
+    return Ev * Q.du * Q.dv;
+  }
+  const E0 = energy(net0);
+  return { E0, energy, rel: t => energy(applyOffsets(net0, vars, t)) / E0 };
+}
+
+// ---------- linear thin-plate fairing: min ∫ |Suu|²+2|Suv|²+|Svv|²  + λ|t|², exact solve, λ by bisection so max|t| = δ ----------
+function cholSolve(A, b, n) {
+  const L = new Float64Array(n * n);
+  for (let i = 0; i < n; i++) for (let j = 0; j <= i; j++) {
+    let s = A[i * n + j]; for (let k = 0; k < j; k++) s -= L[i * n + k] * L[j * n + k];
+    if (i === j) { if (s <= 0) return null; L[i * n + i] = Math.sqrt(s); } else L[i * n + j] = s / L[j * n + j];
+  }
+  const y = new Float64Array(n);
+  for (let i = 0; i < n; i++) { let s = b[i]; for (let k = 0; k < i; k++) s -= L[i * n + k] * y[k]; y[i] = s / L[i * n + i]; }
+  const x = new Float64Array(n);
+  for (let i = n - 1; i >= 0; i--) { let s = y[i]; for (let k = i + 1; k < n; k++) s -= L[k * n + i] * x[k]; x[i] = s / L[i * n + i]; }
+  return x;
+}
+function thinPlate(net0, p, vars, delta) {
+  const m = net0.length, nC = net0[0].length, nv = vars.length, Q = quadGrid(m, nC, p, 72, 36);
+  const map = new Map();
+  vars.forEach((v, k) => { map.set(v.i * nC + v.j, [k, 1]); if (v.j !== 6) map.set(v.i * nC + 12 - v.j, [k, -1]); });
+  const AtA = new Float64Array(nv * nv), Atb = new Float64Array(nv), out = new Float64Array(18);
+  const coef = new Float64Array(nv * 3), touched = [];
+  const terms = [[2, 0, 1, 9], [1, 1, Math.SQRT2, 12], [0, 2, 1, 15]]; // (du order, dv order, weight, offset in out)
+  for (const bu of Q.bu) for (const bv of Q.bv) {
+    evalNet(net0, p, bu, bv, out);
+    for (const [ou, ov, w, off] of terms) {
+      touched.length = 0;
+      for (let a = 0; a <= p; a++) for (let b = 0; b <= p; b++) {
+        const e = map.get((bu.span - p + a) * nC + (bv.span - p + b)); if (!e) continue;
+        const [k, mz] = e, c = w * bu.d[ou][a] * bv.d[ov][b], nn = vars[k].n;
+        if (coef[3 * k] === 0 && coef[3 * k + 1] === 0 && coef[3 * k + 2] === 0) touched.push(k);
+        coef[3 * k] += c * nn[0]; coef[3 * k + 1] += c * nn[1]; coef[3 * k + 2] += c * nn[2] * mz;
+      }
+      for (let c = 0; c < 3; c++) {
+        const bval = w * out[off + c];
+        for (const k1 of touched) {
+          const a1 = coef[3 * k1 + c]; if (!a1) continue;
+          Atb[k1] += a1 * bval;
+          for (const k2 of touched) AtA[k1 * nv + k2] += a1 * coef[3 * k2 + c];
+        }
+      }
+      for (const k of touched) { coef[3 * k] = coef[3 * k + 1] = coef[3 * k + 2] = 0; }
+    }
+  }
+  let tr = 0; for (let i = 0; i < nv; i++) tr += AtA[i * nv + i]; tr /= nv;
+  const solve = lam => { const A = AtA.slice(); for (let i = 0; i < nv; i++) A[i * nv + i] += lam; return cholSolve(A, Atb.map(x => -x), nv); };
+  const maxAbs = t => t.reduce((s, x) => Math.max(s, Math.abs(x)), 0);
+  let lo = Math.log(tr * 1e-7), hi = Math.log(tr * 1e3), best = solve(Math.exp(hi));
+  const t0 = solve(Math.exp(lo));
+  if (t0 && maxAbs(t0) <= delta) return Array.from(t0);
+  for (let it = 0; it < 40; it++) {
+    const mid = (lo + hi) / 2, t = solve(Math.exp(mid));
+    if (t && maxAbs(t) <= delta) { best = t; hi = mid; } else lo = mid;
+  }
+  return Array.from(best);
+}
+
+// ---------- metaheuristics on the nonlinear energy (box |t_k| ≤ δ) ----------
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function initPop(NP, D, delta, R, seeds) {
+  const pop = [];
+  for (const s of seeds) pop.push(Float64Array.from(s));
+  const centre = seeds.length > 1 ? seeds[1] : seeds[0];
+  while (pop.length < NP) {
+    const base = pop.length % 2 && seeds.length > 1 ? centre : seeds[0];
+    const spread = seeds.length > 1 ? 0.15 : 0.3;
+    pop.push(Float64Array.from({ length: D }, (_, j) => Math.max(-delta, Math.min(delta, base[j] + (2 * R() - 1) * spread * delta))));
+  }
+  return pop;
+}
+function runMeta(method, f, D, delta, budget, seeds, cb, seed = 7, shouldStop = () => false) {
+  const R = rng(seed), NP = 30, pen = 0.05;
+  const F = t => { let s = 0; for (let j = 0; j < D; j++) s += (t[j] / delta) ** 2; return f(t) + pen * s / D; };
+  const pop = initPop(NP, D, delta, R, seeds), fit = pop.map(F);
+  let evals = NP, bi = fit.indexOf(Math.min(...fit)), best = pop[bi].slice(), bestF = fit[bi];
+  const hist = [[evals, bestF]];
+  const clip = x => Math.max(-delta, Math.min(delta, x));
+  const report = () => { hist.push([evals, bestF]); cb && cb(evals, bestF, best, hist); };
+  if (method === 'jde') {
+    const Fi = new Float64Array(NP).fill(0.5), CRi = new Float64Array(NP).fill(0.9), tr = new Float64Array(D);
+    while (evals < budget && !shouldStop()) {
+      for (let i = 0; i < NP && evals < budget; i++) {
+        const Fn = R() < 0.1 ? 0.1 + 0.9 * R() : Fi[i], CRn = R() < 0.1 ? R() : CRi[i];
+        let r1, r2, r3; do r1 = R() * NP | 0; while (r1 === i); do r2 = R() * NP | 0; while (r2 === i || r2 === r1); do r3 = R() * NP | 0; while (r3 === i || r3 === r1 || r3 === r2);
+        const jr = R() * D | 0;
+        for (let j = 0; j < D; j++) {
+          if (R() < CRn || j === jr) { let x = pop[r1][j] + Fn * (pop[r2][j] - pop[r3][j]); if (x > delta) x = (delta + pop[i][j]) / 2; if (x < -delta) x = (-delta + pop[i][j]) / 2; tr[j] = x; }
+          else tr[j] = pop[i][j];
+        }
+        const ft = F(tr); evals++;
+        if (ft <= fit[i]) { pop[i].set(tr); fit[i] = ft; Fi[i] = Fn; CRi[i] = CRn; if (ft < bestF) { bestF = ft; best = tr.slice(); } }
+      }
+      report();
+    }
+  } else if (method === 'pso') {
+    const w = 0.729, c1 = 1.49445, c2 = 1.49445, vmax = 0.25 * delta;
+    const V = pop.map(() => new Float64Array(D)), pb = pop.map(x => x.slice()), pbf = fit.slice();
+    while (evals < budget && !shouldStop()) {
+      for (let i = 0; i < NP && evals < budget; i++) {
+        const x = pop[i], v = V[i];
+        for (let j = 0; j < D; j++) {
+          v[j] = w * v[j] + c1 * R() * (pb[i][j] - x[j]) + c2 * R() * (best[j] - x[j]);
+          v[j] = Math.max(-vmax, Math.min(vmax, v[j])); x[j] = clip(x[j] + v[j]);
+        }
+        const fx = F(x); evals++;
+        if (fx < pbf[i]) { pbf[i] = fx; pb[i] = x.slice(); if (fx < bestF) { bestF = fx; best = x.slice(); } }
+      }
+      report();
+    }
+  } else if (method === 'gwo') {
+    const maxIt = Math.ceil((budget - NP) / NP); let it = 0;
+    const order = () => fit.map((f, i) => [f, i]).sort((a, b) => a[0] - b[0]).slice(0, 3).map(e => pop[e[1]].slice());
+    let [A, B, Dl] = order();
+    while (evals < budget && !shouldStop()) {
+      const a = 2 - 2 * it / maxIt;
+      for (let i = 0; i < NP && evals < budget; i++) {
+        const x = pop[i];
+        for (let j = 0; j < D; j++) {
+          let s = 0;
+          for (const L of [A, B, Dl]) { const a1 = 2 * a * R() - a, c1 = 2 * R(); s += L[j] - a1 * Math.abs(c1 * L[j] - x[j]); }
+          x[j] = clip(s / 3);
+        }
+        fit[i] = F(x); evals++;
+        if (fit[i] < bestF) { bestF = fit[i]; best = x.slice(); }
+      }
+      [A, B, Dl] = order(); it++;
+      report();
+    }
+  }
+  return { best, bestF, evals, hist };
+}
+
+// Reduced (smooth) design space: offset field t(i,j) = Σ c_ab B_a(i) B_b(j) with coarse cubic B-splines.
+// Partition of unity ⇒ |c| ≤ δ guarantees |t| ≤ δ, and the field cannot carry control-point-level noise.
+function reducedBasis(vars, Ka = 9, Kb = 4) {
+  const is = vars.map(v => v.i), js = vars.map(v => v.j);
+  const i0 = Math.min(...is), i1 = Math.max(...is), j0 = Math.min(...js), j1 = Math.max(...js);
+  const basis = (K, s) => { const U = clampedKnots(K, 3), sp = findSpan(K - 1, 3, s, U), d = dersBasis(sp, s, 3, 0, U)[0], out = new Float64Array(K); for (let a = 0; a <= 3; a++) out[sp - 3 + a] = d[a]; return out; };
+  return vars.map(v => {
+    const bi = basis(Ka, (v.i - i0) / (i1 - i0)), bj = basis(Kb, (v.j - j0) / (j1 - j0)), row = new Float64Array(Ka * Kb);
+    for (let a = 0; a < Ka; a++) for (let b = 0; b < Kb; b++) row[a * Kb + b] = bi[a] * bj[b];
+    return row;
+  });
+}
+function expand(Phi, c) { return Phi.map(r => { let s = 0; for (let k = 0; k < r.length; k++) s += r[k] * c[k]; return s; }); }
+function project(Phi, t, delta) {
+  const D = Phi[0].length, A = new Float64Array(D * D), b = new Float64Array(D);
+  Phi.forEach((r, k) => { for (let a = 0; a < D; a++) { b[a] += r[a] * t[k]; for (let c = 0; c < D; c++) A[a * D + c] += r[a] * r[c]; } });
+  for (let a = 0; a < D; a++) A[a * D + a] += 1e-9;
+  return Array.from(cholSolve(A, b, D)).map(x => Math.max(-delta, Math.min(delta, x)));
+}
+
+if (typeof module !== 'undefined') module.exports = { reducedBasis, expand, project, fairVars, applyOffsets, makeObjective, thinPlate, runMeta };
+
+// ---------- worker protocol ----------
+if (typeof self !== 'undefined' && typeof window === 'undefined' && typeof module === 'undefined') {
+  let stop = false;
+  self.onmessage = (e) => {
+    const msg = e.data;
+    if (msg.cmd === 'stop') { stop = true; return; }
+    if (msg.cmd !== 'run') return;
+    stop = false;
+    const { net0, p, method, kind, delta, budget, seed } = msg;
+    const t0 = performance.now();
+    const vars = fairVars(net0, p), D = vars.length;
+    const objV = makeObjective(net0, p, vars, 'var'), objB = makeObjective(net0, p, vars, 'bend');
+    const obj = kind === 'bend' ? objB : objV;
+    const summary = (t) => ({ relVar: objV.rel(t), relBend: objB.rel(t), maxDev: t.reduce((s, x) => Math.max(s, Math.abs(x)), 0) });
+    const reduced = msg.space !== 'full' && method !== 'tp';
+    const Phi = reduced ? reducedBasis(vars) : null;
+    const Dm = reduced ? Phi[0].length : D;
+    const toT = c => reduced ? expand(Phi, c) : Array.from(c);
+    const f = reduced ? (c => obj.rel(expand(Phi, c))) : obj.rel;
+    let last = 0;
+    const cb = (ev, fv, best, hist) => { const now = performance.now(); if (now - last > 350) { last = now; self.postMessage({ type: 'progress', vars, best: toT(best), evals: ev, f: fv, hist, Dm }); } };
+    let result;
+    if (method === 'tp') {
+      const tp = thinPlate(net0, p, vars, delta);
+      result = { best: tp, evals: 1, hist: [[0, 1], [1, obj.rel(tp)]] };
+    } else {
+      const seeds = [new Float64Array(Dm)];
+      if (method === 'hyb') { const tp = thinPlate(net0, p, vars, delta); seeds.push(Float64Array.from(reduced ? project(Phi, tp, delta) : tp)); }
+      result = runMeta(method === 'hyb' ? 'jde' : method, f, Dm, delta, budget, seeds, cb, seed, () => stop);
+      result.best = toT(result.best);
+    }
+    const best = Array.from(result.best);
+    self.postMessage({ type: 'done', vars, best, evals: result.evals, hist: result.hist, ms: performance.now() - t0, D, Dm, ...summary(best), stopped: stop });
+  };
+}
+
+
+// ---------- state ----------
+const prm = { L: 4.60, W: 1.82, H: 1.44, rake: 0, rear: 0, flare: 0.025 };
+let P = 3, NST = 28, MODE = 0, secU = 0.52;
+let showNet = false, showKnot = false, showComb = false;
+let NET0 = null, pos0 = null, showOrig = false;
+const fair = { vars: null, best: null, kind: 'var', method: 'jde', space: 'reduced', Dm: 0, delta: 0.010, budget: 9000, worker: null, t0: 0, hist: [], evals: 0 };
+const NU = 300, NV = 150;
+
+// ---------- renderer / scene ----------
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#e8e9ea');
+scene.fog = new THREE.Fog('#e8e9ea', 14, 30);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.03).texture;
+const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 100);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 2.5; controls.maxDistance = 25;
+const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(3, 6, 4); scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f96, 0.35));
+
+const car = new THREE.Group(); scene.add(car);
+
+// ground + contact shadow
+{
+  const g = new THREE.Mesh(new THREE.CircleGeometry(30, 64), new THREE.MeshStandardMaterial({ color: '#dcdedf', roughness: 1 }));
+  g.rotation.x = -Math.PI / 2; scene.add(g);
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256; const cx = cv.getContext('2d');
+  const gr = cx.createRadialGradient(128, 128, 10, 128, 128, 128);
+  gr.addColorStop(0, 'rgba(0,0,0,0.55)'); gr.addColorStop(0.55, 'rgba(0,0,0,0.25)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  cx.fillStyle = gr; cx.fillRect(0, 0, 256, 256);
+  const sh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false }));
+  sh.rotation.x = -Math.PI / 2; sh.position.y = 0.002; sh.name = 'shadow'; scene.add(sh);
+}
+
+// ---------- materials ----------
+const paintU = {
+  uPaint: { value: new THREE.Color('#9e1b17') },
+  uL1: { value: new THREE.Vector4() }, uL2: { value: new THREE.Vector4() }
+};
+const paintMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0.35, roughness: 0.32, clearcoat: 1, clearcoatRoughness: 0.04 });
+paintMat.onBeforeCompile = (sh) => {
+  Object.assign(sh.uniforms, paintU);
+  sh.vertexShader = sh.vertexShader
+    .replace('#include <common>', '#include <common>\nattribute vec2 aBT;\nvarying vec2 vBT;\nvarying vec3 vOP;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBT = aBT; vOP = position;');
+  sh.fragmentShader = sh.fragmentShader
+    .replace('#include <common>', '#include <common>\nvarying vec2 vBT;\nvarying vec3 vOP;\nuniform vec3 uPaint;\nuniform vec4 uL1;\nuniform vec4 uL2;')
+    .replace('#include <color_fragment>', `#include <color_fragment>
+      float ax = vOP.x, ay = vOP.y, az = abs(vOP.z);
+      float belt = vBT.x + 0.035, tt = vBT.y;
+      float glass = 0.0; float trim = 0.0; float lamp = 0.0; vec3 lampCol = vec3(0.0);
+      if (ay > belt && ax > uL1.x && ax < uL1.w) {
+        bool inner = az <= 0.90 * tt;
+        bool roof = ax > uL1.y && ax < uL1.z;
+        if (inner && !roof) glass = 1.0;
+        if (az >= 1.05 * tt && ax > uL1.x + 0.10 && ax < uL2.z) {
+          glass = 1.0;
+          if (abs(ax - uL2.y) < 0.05) { glass = 0.0; trim = 1.0; }
+        }
+      }
+      if (ax > uL1.x - 0.02 && ax < uL2.z + 0.05 && ay > belt - 0.025 && ay < belt && az > 0.6 * tt) trim = 1.0;
+      if (ax < 0.36 && ay > 0.55 && ay < 0.69 && az > 0.42 * uL2.w && az < 0.84 * uL2.w) { lamp = 1.0; lampCol = vec3(0.92, 0.94, 0.97); }
+      if (ax < 0.10 && ay > 0.30 && ay < 0.50 && az < 0.50 * uL2.w) { trim = 1.0; }
+      if (ax > uL2.x - 0.30 && ay > 0.80 && ay < 0.91 && az > 0.30 * uL2.w) { lamp = 1.0; lampCol = vec3(0.62, 0.04, 0.04); }
+      vec3 base = uPaint;
+      if (glass > 0.5) base = vec3(0.025, 0.03, 0.035);
+      if (trim > 0.5) base = vec3(0.04);
+      if (lamp > 0.5) base = lampCol;
+      diffuseColor.rgb = base;`)
+    .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n if (glass > 0.5 || lamp > 0.5) roughnessFactor = 0.05; if (trim > 0.5) roughnessFactor = 0.6;')
+    .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n if (glass > 0.5 || trim > 0.5) metalnessFactor = 0.0; if (lamp > 0.5) metalnessFactor = 0.6;');
+};
+
+const anaU = { uMode: { value: 1 }, uFreq: { value: 14 }, uKr: { value: 1 }, uHr: { value: 1 }, uDr: { value: 0.01 } };
+const anaMat = new THREE.ShaderMaterial({
+  uniforms: anaU,
+  vertexShader: `
+    attribute vec2 aCurv; attribute float aDev; varying vec3 vN; varying vec3 vW; varying vec2 vC; varying float vD;
+    void main(){ vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); vC = aCurv; vD = aDev;
+      gl_Position = projectionMatrix * viewMatrix * w; }`,
+  fragmentShader: `
+    varying vec3 vN; varying vec3 vW; varying vec2 vC; varying float vD;
+    uniform int uMode; uniform float uFreq, uKr, uHr, uDr;
+    vec3 div(float t){ t = clamp(t,-1.0,1.0);
+      vec3 b = vec3(0.13,0.33,0.80), w = vec3(0.96,0.96,0.95), r = vec3(0.80,0.15,0.12);
+      return t < 0.0 ? mix(w, b, -t) : mix(w, r, t); }
+    float stripe(float s){ float fw = fwidth(s) * 1.2; float d = abs(fract(s) - 0.5); return smoothstep(0.25 - fw, 0.25 + fw, d); }
+    void main(){
+      vec3 N = normalize(vN); vec3 V = normalize(cameraPosition - vW);
+      vec3 col;
+      if (uMode == 1) { vec3 R = reflect(-V, N); float a = asin(clamp(R.y, -1.0, 1.0)); col = vec3(stripe(a / 3.14159 * uFreq)); }
+      else if (uMode == 2) { float s = dot(N, normalize(vec3(0.25, 1.0, 0.35))) * uFreq * 0.5; col = vec3(stripe(s)); }
+      else {
+        float val = uMode == 3 ? vC.x / uKr : (uMode == 4 ? vC.y / uHr : vD / uDr);
+        col = div(val);
+        float s = val * 5.0; float fw = fwidth(s); float ln = 1.0 - smoothstep(0.0, fw * 1.2, abs(fract(s) - 0.5) - (0.5 - fw));
+        col = mix(col, col * 0.55, ln * 0.0);
+        float c = abs(fract(s + 0.5) - 0.5); float lw = fw * 0.9; col *= mix(0.62, 1.0, smoothstep(0.0, lw, c));
+        float sh = 0.72 + 0.28 * max(dot(N, normalize(vec3(0.4,1.0,0.6))), 0.0); col *= sh;
+      }
+      gl_FragColor = vec4(col, 1.0);
+      #include <colorspace_fragment>
+    }`
+});
+const backMat = new THREE.MeshStandardMaterial({ color: '#141518', roughness: 0.9, side: THREE.BackSide });
+
+// ---------- body meshes ----------
+const bodyGeo = new THREE.BufferGeometry();
+const body = new THREE.Mesh(bodyGeo, paintMat);
+const bodyBack = new THREE.Mesh(bodyGeo, backMat);
+car.add(body, bodyBack);
+const under = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: '#101113', roughness: 1 }));
+car.add(under);
+const overlays = new THREE.Group(); car.add(overlays);
+
+// ---------- wheels ----------
+function makeWheel() {
+  const g = new THREE.Group();
+  const R = 0.33, Wd = 0.225;
+  const tire = new THREE.Mesh(new THREE.CylinderGeometry(R, R, Wd, 48, 1, false), new THREE.MeshStandardMaterial({ color: '#17181a', roughness: 0.85 }));
+  tire.rotation.x = Math.PI / 2; g.add(tire);
+  const side = new THREE.Mesh(new THREE.TorusGeometry(R - 0.035, 0.035, 12, 48), tire.material); side.position.z = Wd / 2 - 0.02; g.add(side);
+  const rimMat = new THREE.MeshStandardMaterial({ color: '#b9bec4', metalness: 0.9, roughness: 0.28 });
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.235, 0.235, Wd * 0.9, 40, 1, true), new THREE.MeshStandardMaterial({ color: '#2a2c30', metalness: 0.6, roughness: 0.5, side: THREE.DoubleSide }));
+  barrel.rotation.x = Math.PI / 2; g.add(barrel);
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(0.232, 0.012, 8, 48), rimMat); lip.position.z = Wd / 2 - 0.005; g.add(lip);
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.04, 24), rimMat); hub.rotation.x = Math.PI / 2; hub.position.z = Wd / 2 - 0.02; g.add(hub);
+  for (let k = 0; k < 5; k++) {
+    const sp = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.045, 0.025), rimMat);
+    const a = k * Math.PI * 2 / 5; sp.position.set(Math.cos(a) * 0.135, Math.sin(a) * 0.135, Wd / 2 - 0.025); sp.rotation.z = a; g.add(sp);
+  }
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.02, 32), new THREE.MeshStandardMaterial({ color: '#6d7177', metalness: 0.8, roughness: 0.4 }));
+  disc.rotation.x = Math.PI / 2; disc.position.z = -0.01; g.add(disc);
+  return g;
+}
+const wheels = [makeWheel(), makeWheel(), makeWheel(), makeWheel()];
+wheels.forEach(w => car.add(w));
+
+// ---------- build ----------
+let S = null, D = null, NET = null, lastCheck = null;
+function rebuild() {            // design changed: new base net, fairing discarded
+  stopWorker(); fair.vars = null; fair.best = null; fair.hist = []; pos0 = null; showOrig = false;
+  D = buildDesign(prm);
+  NET0 = buildNet(D, NST);
+  updateFairUI(); drawConv();
+  $('fres').innerHTML = 'Free variables: one normal offset per control point (left/right mirrored). Hard points fixed: 3 end rows each side (bumpers) + rocker/wheel-arch edge.';
+  rebuildSurface();
+}
+function rebuildSurface() {    // net (or fairing offsets) changed
+  const faired = fair.best && !showOrig;
+  NET = faired ? applyOffsets(NET0, fair.vars, fair.best) : NET0;
+  S = makeSurface(NET, P);
+  const T = tessellate(S, NU, NV);
+  const nv = NU * NV, bt = new Float32Array(nv * 2), dev = new Float32Array(nv);
+  for (let k = 0; k < nv; k++) { const x = T.pos[3 * k]; bt[2 * k] = D.S(x); bt[2 * k + 1] = D.T(x); }
+  if (fair.best) {
+    if (!pos0) pos0 = tessellate(makeSurface(NET0, P), NU, NV).pos;
+    if (faired) for (let k = 0; k < nv; k++) dev[k] = (T.pos[3 * k] - pos0[3 * k]) * T.nor[3 * k] + (T.pos[3 * k + 1] - pos0[3 * k + 1]) * T.nor[3 * k + 1] + (T.pos[3 * k + 2] - pos0[3 * k + 2]) * T.nor[3 * k + 2];
+  }
+  bodyGeo.setAttribute('position', new THREE.BufferAttribute(T.pos, 3));
+  bodyGeo.setAttribute('normal', new THREE.BufferAttribute(T.nor, 3));
+  bodyGeo.setAttribute('aCurv', new THREE.BufferAttribute(T.curv, 2));
+  bodyGeo.setAttribute('aBT', new THREE.BufferAttribute(bt, 2));
+  bodyGeo.setAttribute('aDev', new THREE.BufferAttribute(dev, 1));
+  bodyGeo.setIndex(new THREE.BufferAttribute(T.idx, 1));
+  bodyGeo.computeBoundingSphere();
+  if (!fair.best || !anaU.uKr.lock) { anaU.uKr.value = T.kRange; anaU.uHr.value = T.hRange; }
+  anaU.uKr.lock = !!fair.best; anaU.uDr.value = fair.delta;
+  const ld = D.land;
+  paintU.uL1.value.set(ld.xA0, ld.xRoofF, ld.xRoofR, ld.xE);
+  paintU.uL2.value.set(D.L, ld.xB, ld.xC, D.sw);
+  car.position.x = -D.L / 2;
+  const tz = 0.78 * D.sw;
+  [[D.axF, tz], [D.axF, -tz], [D.axR, tz], [D.axR, -tz]].forEach(([x, z], i) => {
+    wheels[i].position.set(x, 0.33, z); wheels[i].rotation.y = z < 0 ? Math.PI : 0;
+  });
+  under.scale.set(D.L - 0.5, 0.36, 1.2 * D.sw); under.position.set(D.L / 2, 0.32, 0);
+  const sh = scene.getObjectByName('shadow'); sh.scale.set(D.L * 1.25, 2.3 * D.sw, 1);
+  lastCheck = continuityCheck(S, T.hRange);
+  buildOverlays();
+  updateHud();
+}
+
+function lineMat(color, opacity = 1) { return new THREE.LineBasicMaterial({ color, transparent: opacity < 1, opacity, depthTest: true }); }
+function buildOverlays() {
+  overlays.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+  overlays.clear();
+  if (showNet) {
+    const v = [];
+    for (let i = 0; i < NET.length; i++) for (let j = 0; j < NET[0].length; j++) {
+      const a = NET[i][j];
+      if (i + 1 < NET.length) v.push(...a, ...NET[i + 1][j]);
+      if (j + 1 < NET[0].length) v.push(...a, ...NET[i][j + 1]);
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+    overlays.add(new THREE.LineSegments(g, lineMat('#1c5fd4', 0.75)));
+    const fixed = [], free = [], m = NET.length;
+    NET.forEach((r, i) => r.forEach((q, j) => ((i >= 3 && i <= m - 4 && j >= 1 && j <= 11) ? free : fixed).push(...q)));
+    for (const [arr, col] of [[fixed, '#1c5fd4'], [free, '#e07a10']]) {
+      const gp = new THREE.BufferGeometry(); gp.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+      overlays.add(new THREE.Points(gp, new THREE.PointsMaterial({ color: col, size: 5, sizeAttenuation: false })));
+    }
+  }
+  if (showKnot) {
+    const v = []; const off = 0.004;
+    const push = (o) => { const g = S.geom(o); return [o[0] + g[0] * off, o[1] + g[1] * off, o[2] + g[2] * off]; };
+    for (const uk of interiorKnots(S.U)) { const bu = S.basisU(uk); let prev = null; for (let s = 0; s <= 90; s++) { const q = push(S.evalB(bu, S.basisV(s / 90))); if (prev) v.push(...prev, ...q); prev = q; } }
+    for (const vk of interiorKnots(S.V)) { const bv = S.basisV(vk); let prev = null; for (let s = 0; s <= 160; s++) { const q = push(S.evalB(S.basisU(s / 160), bv)); if (prev) v.push(...prev, ...q); prev = q; } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+    overlays.add(new THREE.LineSegments(g, lineMat(MODE === 0 ? '#f4d35e' : '#0b7a3e')));
+  }
+  if (showComb) {
+    for (const [dir, c, n] of [['u', 0.5, 420], ['v', secU, 240]]) {
+      const cb = comb(S, dir, c, n);
+      const teeth = [], env = [], curve = [];
+      cb.forEach((e, i) => { if (i % 2 === 0) teeth.push(...e.P, ...e.T); if (i) { env.push(...cb[i - 1].T, ...e.T); curve.push(...cb[i - 1].P, ...e.P); } });
+      const add = (arr, col, op) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3)); overlays.add(new THREE.LineSegments(g, lineMat(col, op))); };
+      add(teeth, '#d12a6a', 0.55); add(env, '#7a0f3a', 1); add(curve, '#111111', 1);
+    }
+  }
+}
+
+// ---------- HUD ----------
+const $ = id => document.getElementById(id);
+function fmtE(x) { return x < 1e-12 ? '< 1e-12' : x.toExponential(1); }
+function updateHud() {
+  const m = S.m, n = S.n, patches = (m - P) * (n - P);
+  const g2 = P >= 3;
+  $('sub').textContent = `degree ${P}×${P} · ${m}×${n} ctrl pts · ${patches} patches`;
+  $('badge').innerHTML =
+    `<b>${g2 ? 'C' + (P - 1 === 2 ? '²' : P - 1 === 3 ? '³' : '⁴') : 'C¹'}</b> → <b class="${g2 ? 'ok' : 'bad'}">${g2 ? 'G2 ✓' : 'G1 only ✗'}</b><br>` +
+    `Δn ${fmtE(lastCheck.dN)}<br>ΔH/H<sub>ref</sub> <span class="${g2 ? 'ok' : 'bad'}">${fmtE(lastCheck.rel)}</span>`;
+  const L = D.L, wb = D.axR - D.axF;
+  $('spec').innerHTML =
+    `<div>Length <b>${(L * 1000).toFixed(0)}</b></div><div>Width <b>${(prm.W * 1000).toFixed(0)}</b></div>` +
+    `<div>Height <b>${(prm.H * 1000 + 30).toFixed(0)}</b></div><div>Wheelbase <b>${(wb * 1000).toFixed(0)}</b></div>` +
+    `<div>F overhang <b>${(D.axF * 1000).toFixed(0)}</b></div><div>R overhang <b>${((L - D.axR) * 1000).toFixed(0)}</b></div>` +
+    `<div>Track <b>${(1.56 * D.sw * 1000).toFixed(0)}</b></div><div>Tyre <b>Ø660</b></div>` +
+    `<div>Knots u <b>${S.U.length}</b></div><div>Knots v <b>${S.V.length}</b></div>`;
+  for (const k of ['L', 'W', 'H']) $(k + 'v').textContent = (+$(k).value).toFixed(2) + ' m';
+  $('rakev').textContent = (+$('rake').value * 100).toFixed(0) + ' cm';
+  $('rearv').textContent = (+$('rear').value).toFixed(2);
+  $('flarev').textContent = (+$('flare').value * 1000).toFixed(0) + ' mm';
+  $('Nv').textContent = $('N').value;
+  $('deltav').textContent = $('delta').value + ' mm'; $('budgetv').textContent = (+$('budget').value / 1000) + 'k'; $('secUv').textContent = (+$('secU').value).toFixed(2);
+  const leg = $('legend');
+  if (MODE >= 3) {
+    leg.style.display = 'block';
+    const r = MODE === 3 ? anaU.uKr.value : MODE === 4 ? anaU.uHr.value : fair.delta * 1000;
+    $('legT').textContent = MODE === 3 ? 'Gaussian K (1/m²)' : MODE === 4 ? 'Mean H (1/m)' : 'Normal deviation (mm)';
+    $('legL').textContent = '−' + r.toFixed(MODE === 5 ? 0 : 2); $('legR').textContent = '+' + r.toFixed(MODE === 5 ? 0 : 2);
+    $('legBar').style.background = 'linear-gradient(90deg,#2154cc,#f5f5f2,#cc261f)';
+  } else leg.style.display = 'none';
+}
+
+// ---------- UI wiring ----------
+let pending = false;
+function schedule() { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; rebuild(); }); }
+for (const k of ['L', 'W', 'H', 'rake', 'rear', 'flare']) $(k).addEventListener('input', e => { prm[k] = +e.target.value; schedule(); });
+$('N').addEventListener('input', e => { NST = +e.target.value; schedule(); });
+$('secU').addEventListener('input', e => { secU = +e.target.value; if (!showComb) { showComb = true; $('tComb').classList.add('on'); } buildOverlays(); updateHud(); });
+$('modes').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  MODE = +b.dataset.m; [...$('modes').children].forEach(c => c.classList.toggle('on', c === b));
+  if (MODE === 0) body.material = paintMat; else { body.material = anaMat; anaU.uMode.value = MODE; }
+  buildOverlays(); updateHud();
+});
+$('degs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  P = +b.dataset.p; [...$('degs').children].forEach(c => c.classList.toggle('on', c === b)); schedule();
+});
+const tog = (id, fn) => $(id).addEventListener('click', () => { const on = fn(); $(id).classList.toggle('on', on); buildOverlays(); });
+tog('tNet', () => (showNet = !showNet));
+tog('tKnot', () => (showKnot = !showKnot));
+tog('tComb', () => (showComb = !showComb));
+$('paints').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  paintU.uPaint.value.set(b.dataset.c); [...$('paints').children].forEach(c => c.classList.toggle('on', c === b));
+});
+$('grab').addEventListener('click', () => $('sheet').classList.toggle('collapsed'));
+function toast(t) { const el = $('toast'); el.textContent = t; el.style.opacity = 1; setTimeout(() => (el.style.opacity = 0), 1600); }
+$('copy').addEventListener('click', async () => {
+  const data = { type: 'clamped uniform B-spline surface', degree: [P, P], knotsU: S.U, knotsV: S.V,
+    axes: 'x = length (front at 0), y = height, z = lateral; metres',
+    controlPoints: NET.map(r => r.map(p => p.map(v => +v.toFixed(5)))) };
+  try { await navigator.clipboard.writeText(JSON.stringify(data)); toast('Control net copied'); } catch { toast('Clipboard blocked here'); }
+});
+
+// ---------- fairing ----------
+const WSRC = URL.createObjectURL(new Blob([document.getElementById('wsrc').textContent], { type: 'text/javascript' }));
+function stopWorker() { if (fair.worker) { fair.worker.terminate(); fair.worker = null; } }
+function updateFairUI() {
+  const running = !!fair.worker;
+  $('fRun').disabled = running; $('fStop').disabled = !running;
+  $('fCmp').disabled = !fair.best || running; $('fReset').disabled = !fair.best || running;
+  $('fCmp').classList.toggle('on', showOrig);
+  $('fCmp').textContent = showOrig ? 'Showing original' : 'Show original';
+}
+const conv = $('conv');
+function drawConv() {
+  const dpr = Math.min(devicePixelRatio, 2), w = conv.clientWidth || 300, h = conv.clientHeight || 96;
+  conv.width = w * dpr; conv.height = h * dpr;
+  const c = conv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+  c.font = '10px IBM Plex Mono, monospace'; c.fillStyle = '#5d636b';
+  const H = fair.hist;
+  if (!H.length) { c.fillText('convergence: J(t)/J(0) vs evaluations', 8, h / 2 + 3); return; }
+  const pl = 34, pr = 8, pt = 8, pb = 16;
+  const xs = H.map(e => e[0]), ys = H.map(e => e[1]);
+  const xmax = Math.max(fair.budget, ...xs), ymin = Math.min(...ys), ymax = Math.max(1, ...ys);
+  const X = x => pl + (w - pl - pr) * x / xmax, Y = y => pt + (h - pt - pb) * (ymax - y) / ((ymax - ymin) || 1);
+  c.strokeStyle = '#d3d6da'; c.lineWidth = 1; c.beginPath(); c.moveTo(pl, pt); c.lineTo(pl, h - pb); c.lineTo(w - pr, h - pb); c.stroke();
+  c.fillText(ymax.toFixed(2), 2, pt + 7); c.fillText(ymin.toFixed(2), 2, h - pb); c.fillText((xmax / 1000) + 'k evals', w - 60, h - 3);
+  c.strokeStyle = '#b4231c'; c.lineWidth = 1.6; c.beginPath();
+  H.forEach((e, i) => { const x = X(e[0]), y = Y(e[1]); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke();
+}
+function fairSummary(note) {
+  const oV = makeObjective(NET0, P, fair.vars, 'var'), oB = makeObjective(NET0, P, fair.vars, 'bend');
+  const rv = oV.rel(fair.best), rb = oB.rel(fair.best), md = fair.best.reduce((s, x) => Math.max(s, Math.abs(x)), 0);
+  const pct = r => { const d = (r - 1) * 100; return `<b class="${d < 0 ? 'ok' : 'bad'}">${d >= 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}%</b>`; };
+  const names = { tp: 'Thin-plate (linear, exact)', jde: 'jDE', pso: 'PSO', gwo: 'GWO', hyb: 'Thin-plate → jDE' };
+  $('fres').innerHTML = `${names[fair.method]} · ${note}<br>Curv. variation ${pct(rv)} · Bending ${pct(rb)}<br>` +
+    `max |offset| <b>${(md * 1000).toFixed(1)} mm</b> · D = ${fair.method === 'tp' ? fair.vars.length : (fair.Dm || fair.vars.length)} vars · ${fair.evals} evals · ${((performance.now() - fair.t0) / 1000).toFixed(1)} s<br>` +
+    `Still a degree-${P} B-spline → ${P >= 3 ? 'G2 kept ✓' : 'C¹ only'}`;
+}
+let lastLive = 0;
+$('fRun').addEventListener('click', () => {
+  stopWorker(); showOrig = false;
+  fair.hist = []; fair.evals = 0; fair.t0 = performance.now();
+  fair.delta = +$('delta').value / 1000; fair.budget = +$('budget').value;
+  const wk = new Worker(WSRC); fair.worker = wk; updateFairUI(); drawConv();
+  $('fres').innerHTML = 'Running…';
+  if (MODE === 0) $('modes').querySelector('[data-m="1"]').click();
+  wk.onmessage = (e) => {
+    const m = e.data;
+    fair.vars = m.vars; fair.best = m.best; fair.evals = m.evals; if (m.Dm) fair.Dm = m.Dm;
+    if (m.hist && m.hist.length) fair.hist = m.hist;
+    drawConv();
+    if (m.type === 'progress') {
+      $('fres').innerHTML = `Running… ${m.evals} / ${fair.budget} evals · J/J₀ = <b>${(+m.f).toFixed(3)}</b>`;
+      const now = performance.now(); if (now - lastLive > 450) { lastLive = now; rebuildSurface(); }
+    } else { fair.worker = null; wk.terminate(); rebuildSurface(); fairSummary('done'); updateFairUI(); }
+  };
+  wk.onerror = (err) => { $('fres').textContent = 'Worker error: ' + err.message; stopWorker(); updateFairUI(); };
+  wk.postMessage({ cmd: 'run', net0: NET0, p: P, method: fair.method, kind: fair.kind, space: fair.space, delta: fair.delta, budget: fair.budget, seed: 7 });
+});
+$('fStop').addEventListener('click', () => { stopWorker(); updateFairUI(); if (fair.best) { rebuildSurface(); fairSummary('stopped early'); } else $('fres').textContent = 'Stopped.'; });
+$('fCmp').addEventListener('click', () => { showOrig = !showOrig; updateFairUI(); rebuildSurface(); });
+$('fReset').addEventListener('click', () => { rebuild(); });
+$('fobj').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; fair.kind = b.dataset.k; [...$('fobj').children].forEach(c => c.classList.toggle('on', c === b)); });
+$('fspace').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; fair.space = b.dataset.s; [...$('fspace').children].forEach(c => c.classList.toggle('on', c === b)); });
+$('fmeth').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; fair.method = b.dataset.f; [...$('fmeth').children].forEach(c => c.classList.toggle('on', c === b)); });
+for (const id of ['delta', 'budget']) $(id).addEventListener('input', updateHud);
+
+// ---------- views ----------
+const VIEWS = { q: [-0.62, 0.30, 0.72], s: [0, 0.10, 1], f: [-1, 0.12, 0], r: [1, 0.16, 0], t: [0.0005, 1, 0] };
+const EXT = { q: [2.6, 1.0], s: [2.5, 0.85], f: [1.05, 0.85], r: [1.05, 0.85], t: [2.5, 1.05] };
+let tween = null, curView = 'q', vis = { vw: innerWidth, vh: innerHeight };
+function fitPos(v) {
+  const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)), H = innerHeight;
+  const [ex, ey] = EXT[v];
+  const d = Math.max(ex / (tv * vis.vw / H), ey / (tv * vis.vh / H), 4.5) * 1.12;
+  return new THREE.Vector3(...VIEWS[v]).normalize().multiplyScalar(d).add(controls.target);
+}
+function goView(v, instant) {
+  curView = v;
+  const to = fitPos(v);
+  if (instant) camera.position.copy(to); else tween = { from: camera.position.clone(), to, t: 0 };
+}
+$('views').addEventListener('click', e => { const b = e.target.closest('button'); if (b) goView(b.dataset.v); });
+
+function layout() {
+  const w = innerWidth, h = innerHeight, desk = w >= 900;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 40 : 30;
+  const sheetH = desk ? 0 : Math.min($('sheet').offsetHeight, h * 0.6);
+  const ox = desk ? 190 : 0, oy = desk ? 0 : sheetH / 2 - 20;
+  camera.setViewOffset(w, h, ox, oy, w, h); camera.updateProjectionMatrix();
+  vis = { vw: desk ? w - 400 : w, vh: desk ? h - 90 : h - sheetH - 90 };
+  document.documentElement.style.setProperty('--sheetH', $('sheet').offsetHeight + 'px');
+}
+addEventListener('resize', () => { layout(); goView(curView, true); });
+$('grab').addEventListener('click', () => { layout(); goView(curView); });
+controls.target.set(0, 0.6, 0);
+if (innerWidth < 900) $('sheet').classList.add('collapsed');
+layout(); rebuild(); goView('q', true);
+
+renderer.setAnimationLoop(() => {
+  if (tween) {
+    tween.t = Math.min(1, tween.t + 0.045); const k = 1 - Math.pow(1 - tween.t, 3);
+    camera.position.lerpVectors(tween.from, tween.to, k);
+    if (tween.t >= 1) tween = null;
+  }
+  controls.update(); renderer.render(scene, camera);
+});
+window.__ready = true;
+</script>
+</body>
+</html>

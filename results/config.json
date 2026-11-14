@@ -1,0 +1,112 @@
+{
+  "runs": 30,
+  "budget": 6000,
+  "deltas": [
+    5,
+    10,
+    20
+  ],
+  "surfaces": [
+    "S1",
+    "S2",
+    "S3",
+    "S4"
+  ],
+  "algos": [
+    "jde",
+    "pso",
+    "gwo"
+  ],
+  "spaces": [
+    "full",
+    "reduced"
+  ],
+  "out": "results_v2",
+  "threads": 2,
+  "checkpoints": 50,
+  "p": 3,
+  "gridOpt": [
+    64,
+    32
+  ],
+  "gridVal": [
+    128,
+    64
+  ],
+  "surfaces_info": {
+    "S1": {
+      "name": "Sedan (notchback)",
+      "design": {
+        "L": 4.6,
+        "W": 1.82,
+        "H": 1.44,
+        "rake": 0,
+        "rear": 0,
+        "flare": 0.025
+      },
+      "stations": 28,
+      "ctrlNet": [
+        32,
+        13
+      ],
+      "freeVars": 156,
+      "reducedVars": 36
+    },
+    "S2": {
+      "name": "Fastback coupe",
+      "design": {
+        "L": 4.7,
+        "W": 1.86,
+        "H": 1.38,
+        "rake": 0.12,
+        "rear": 1,
+        "flare": 0.04
+      },
+      "stations": 28,
+      "ctrlNet": [
+        32,
+        13
+      ],
+      "freeVars": 156,
+      "reducedVars": 36
+    },
+    "S3": {
+      "name": "Tall hatch",
+      "design": {
+        "L": 4.3,
+        "W": 1.8,
+        "H": 1.6,
+        "rake": -0.1,
+        "rear": 0.6,
+        "flare": 0.02
+      },
+      "stations": 26,
+      "ctrlNet": [
+        30,
+        13
+      ],
+      "freeVars": 144,
+      "reducedVars": 36
+    },
+    "S4": {
+      "name": "Long GT",
+      "design": {
+        "L": 4.95,
+        "W": 1.92,
+        "H": 1.32,
+        "rake": 0.22,
+        "rear": 0.8,
+        "flare": 0.06
+      },
+      "stations": 32,
+      "ctrlNet": [
+        36,
+        13
+      ],
+      "freeVars": 180,
+      "reducedVars": 36
+    }
+  },
+  "node": "v22.23.4",
+  "date": "2026-11-14T03:14:17.536Z"
+}
