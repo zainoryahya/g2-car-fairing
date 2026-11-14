@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software or data, please cite it as below."
+title: "g2-car-fairing: deviation-bounded fairing of G2 B-spline car-body surfaces"
+version: 1.0.0
+date-released: 2026-11-14
+license: MIT
+repository-code: "https://github.com/zainoryahya/g2-car-fairing"
+authors:
+  - family-names: Yahya
+    given-names: Zainor Ridzuan
+    email: zainoryahya@unimap.edu.my
+    affiliation: "Universiti Malaysia Perlis (UniMAP)"
+keywords:
+  - surface fairing
+  - B-spline surfaces
+  - Class-A surfaces
+  - curvature variation
+  - differential evolution
+  - L-BFGS-B
+# After acceptance, add a preferred-citation block pointing to the journal article.

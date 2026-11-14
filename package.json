@@ -1,0 +1,12 @@
+{
+  "name": "g2-car-fairing",
+  "version": "1.0.0",
+  "description": "Deviation-bounded fairing of G2 bicubic B-spline car-body surfaces: optimisers, smooth reduced design space and local-degradation measure",
+  "license": "MIT",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "smoke": "node run.js --runs 1 --budget 300 --surfaces S1 --deltas 10 --out smoke",
+    "experiment": "node run.js --runs 30 --budget 6000 --deltas 5,10,20 --surfaces S1,S2,S3,S4 --algos jde,pso,gwo --spaces full,reduced --out results"
+  }
+}

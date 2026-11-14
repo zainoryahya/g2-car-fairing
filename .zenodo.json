@@ -1,0 +1,10 @@
+{
+  "title": "g2-car-fairing: deviation-bounded fairing of G2 B-spline car-body surfaces (code and data)",
+  "upload_type": "software",
+  "description": "Code and raw results for the study 'Integral fairness is not enough: deviation-bounded fairing of G2 B-spline car-body surfaces in a smooth reduced design space'. Includes four bicubic B-spline car-body test surfaces, the curvature-variation objective and local-degradation measure, thin-plate, L-BFGS-B, jDE, PSO and GWO optimisers, 2196 optimisation runs and the statistical analysis.",
+  "creators": [
+    { "name": "Yahya, Zainor Ridzuan", "affiliation": "Universiti Malaysia Perlis (UniMAP)" }
+  ],
+  "license": "MIT",
+  "keywords": ["surface fairing", "B-spline", "Class-A surfaces", "curvature variation", "metaheuristics", "L-BFGS-B"]
+}

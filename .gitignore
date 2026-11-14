@@ -1,0 +1,10 @@
+node_modules/
+__pycache__/
+*.pyc
+smoke/
+tex/
+results/*.png
+results/*.pdf
+results/*.csv
+results/report_v2.md
+.DS_Store
